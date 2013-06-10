@@ -117,21 +117,54 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
           dt     = 0,
           gdt    = 0;
 
-      function frame() {
-        now = Util.timestamp();
-        dt  = Math.min(1, (now - last) / 1000); // using requestAnimationFrame have to be able to handle large delta's caused when it 'hibernates' in a background or non-visible tab
-        gdt = gdt + dt;
-        while (gdt > step) {
-          gdt = gdt - step;
-          update(step);
-        }
-        render();
-        stats.update();
-        last = now;
-        requestAnimationFrame(frame, canvas);
-      }
-      frame(); // lets get this party started
-      Game.playMusic();
+
+      var b = Builder._$, C = anm.C;
+
+      var scene = b('scene')
+                    .modify(function(t) {
+                      dt = t - this._._appliedAt;
+                      gdt = gdt + dt;
+                      while (gdt > step) {
+                        gdt = gdt - step;
+                        update(step);
+                      }
+
+                      stats.update();
+                    })
+                    .modify(function(t) {
+                      stats.update();
+                    })
+                    .paint(function(ctx) {
+                      render(ctx);
+                    });
+
+      var racer = createPlayer(canvas.id, {
+        "mode" : C.M_DYNAMIC,
+        "anim" : {
+          "fps": 50, //doesn't actually work
+          "width" : 800,
+          "height" : 600,
+          "bgcolor" : { color : "#72D7EE" }
+        } 
+      }).load(scene);
+
+      racer.play();
+
+      // function frame() {
+      //   now = Util.timestamp();
+      //   dt  = Math.min(1, (now - last) / 1000); // using requestAnimationFrame have to be able to handle large delta's caused when it 'hibernates' in a background or non-visible tab
+      //   gdt = gdt + dt;
+      //   while (gdt > step) {
+      //     gdt = gdt - step;
+      //     update(step);
+      //   }
+      //   render();
+      //   stats.update();
+      //   last = now;
+      //   requestAnimationFrame(frame, canvas);
+      // }
+      // frame(); // lets get this party started
+      // Game.playMusic();
     });
   },
 

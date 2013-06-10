@@ -54,6 +54,8 @@ var hud = {
   fast_lap_time:    { value: null, dom: Dom.get('fast_lap_time_value')    }
 }
 
+var racer;
+
 //=========================================================================
 // UPDATE THE GAME WORLD
 //=========================================================================
@@ -234,7 +236,7 @@ function formatTime(dt) {
 // RENDER THE GAME WORLD
 //=========================================================================
 
-function render() {
+function render(ctx) {
 
   var baseSegment   = findSegment(position);
   var basePercent   = Util.percentRemaining(position, segmentLength);
