@@ -1,7 +1,7 @@
 var fps            = 60;                      // how many 'update' frames per second
 var step           = 1/fps;                   // how long is each frame (in seconds)
-var width          = 1024;                    // logical canvas width
-var height         = 768;                     // logical canvas height
+var width          = window.innerWidth;                    // logical canvas width
+var height         = window.innerHeight;                     // logical canvas height
 var centrifugal    = 0.3;                     // centrifugal force multiplier when going around curves
 var offRoadDecel   = 0.99;                    // speed multiplier when off road (e.g. you lose 2% speed each update frame)
 var skySpeed       = 0.001;                   // background sky layer scroll speed when going around curve (or up hill)
@@ -12,7 +12,6 @@ var hillOffset     = 0;                       // current hill scroll offset
 var treeOffset     = 0;                       // current tree scroll offset
 var segments       = [];                      // array of road segments
 var cars           = [];                      // array of cars on the road
-var stats          = Game.stats('fps');       // mr.doobs FPS counter
 var canvas         = Dom.get('canvas');       // our canvas...
 var ctx            = canvas.getContext('2d'); // ...and its drawing context
 var background     = null;                    // our background image (loaded below)
@@ -53,6 +52,8 @@ var hud = {
   last_lap_time:    { value: null, dom: Dom.get('last_lap_time_value')    },
   fast_lap_time:    { value: null, dom: Dom.get('fast_lap_time_value')    }
 }
+
+var racer;
 
 //=========================================================================
 // UPDATE THE GAME WORLD
@@ -234,7 +235,7 @@ function formatTime(dt) {
 // RENDER THE GAME WORLD
 //=========================================================================
 
-function render() {
+function render(ctx) {
 
   var baseSegment   = findSegment(position);
   var basePercent   = Util.percentRemaining(position, segmentLength);
@@ -261,7 +262,7 @@ function render() {
     segment.fog    = Util.exponentialFog(n/drawDistance, fogDensity);
     segment.clip   = maxy;
 
-    Util.project(segment.p1, (playerX * roadWidth) - x,      playerY + cameraHeight, position - (segment.looped ? trackLength : 0), cameraDepth, width, height, roadWidth);
+    Util.project(segment.p1, (playerX * roadWidth) - x,      playerY + cameraHeight , position - (segment.looped ? trackLength : 0), cameraDepth, width, height, roadWidth);
     Util.project(segment.p2, (playerX * roadWidth) - x - dx, playerY + cameraHeight, position - (segment.looped ? trackLength : 0), cameraDepth, width, height, roadWidth);
 
     x  = x + dx;
@@ -514,7 +515,7 @@ function resetCars() {
 //=========================================================================
 
 Game.run({
-  canvas: canvas, render: render, update: update, stats: stats, step: step,
+  canvas: canvas, render: render, update: update, step: step,
   images: ["background", "sprites"],
   keys: [
     { keys: [KEY.LEFT,  KEY.A], mode: 'down', action: function() { keyLeft   = true;  } },
@@ -550,7 +551,6 @@ function reset(options) {
   cameraDepth            = 1 / Math.tan((fieldOfView/2) * Math.PI/180);
   playerZ                = (cameraHeight * cameraDepth);
   resolution             = height/480;
-  refreshTweakUI();
 
   if ((segments.length==0) || (options.segmentLength) || (options.rumbleLength))
     resetRoad(); // only rebuild road when necessary
@@ -560,32 +560,26 @@ function reset(options) {
 // TWEAK UI HANDLERS
 //=========================================================================
 
-Dom.on('resolution', 'change', function(ev) {
+function setResolution(resolution) {
   var w, h, ratio;
-  switch(ev.target.options[ev.target.selectedIndex].value) {
-    case 'fine':   w = 1280; h = 960;  ratio=w/width; break;
-    case 'high':   w = 1024; h = 768;  ratio=w/width; break;
-    case 'medium': w = 640;  h = 480;  ratio=w/width; break;
-    case 'low':    w = 480;  h = 360;  ratio=w/width; break;
+  switch(resolution) {
+    case 'fine':   
+        canvas.width  = w      = 1280; 
+        canvas.height = height = 960;
+        break;
+    case 'high':   
+        canvas.width  = w      = 1024; 
+        canvas.height = height = 768;
+        break;
+    case 'medium':   
+        canvas.width  = w      = 640; 
+        canvas.height = height = 480;
+        break;
+    case 'low':   
+        canvas.width  = w      = 480; 
+        canvas.height = height = 360;
+        break;
   }
-  reset({ width: w, height: h })
-  Dom.blur(ev);
-});
-
-Dom.on('lanes',          'change', function(ev) { Dom.blur(ev); reset({ lanes:         ev.target.options[ev.target.selectedIndex].value }); });
-Dom.on('roadWidth',      'change', function(ev) { Dom.blur(ev); reset({ roadWidth:     Util.limit(Util.toInt(ev.target.value), Util.toInt(ev.target.getAttribute('min')), Util.toInt(ev.target.getAttribute('max'))) }); });
-Dom.on('cameraHeight',   'change', function(ev) { Dom.blur(ev); reset({ cameraHeight:  Util.limit(Util.toInt(ev.target.value), Util.toInt(ev.target.getAttribute('min')), Util.toInt(ev.target.getAttribute('max'))) }); });
-Dom.on('drawDistance',   'change', function(ev) { Dom.blur(ev); reset({ drawDistance:  Util.limit(Util.toInt(ev.target.value), Util.toInt(ev.target.getAttribute('min')), Util.toInt(ev.target.getAttribute('max'))) }); });
-Dom.on('fieldOfView',    'change', function(ev) { Dom.blur(ev); reset({ fieldOfView:   Util.limit(Util.toInt(ev.target.value), Util.toInt(ev.target.getAttribute('min')), Util.toInt(ev.target.getAttribute('max'))) }); });
-Dom.on('fogDensity',     'change', function(ev) { Dom.blur(ev); reset({ fogDensity:    Util.limit(Util.toInt(ev.target.value), Util.toInt(ev.target.getAttribute('min')), Util.toInt(ev.target.getAttribute('max'))) }); });
-
-function refreshTweakUI() {
-  Dom.get('lanes').selectedIndex = lanes-1;
-  Dom.get('currentRoadWidth').innerHTML      = Dom.get('roadWidth').value      = roadWidth;
-  Dom.get('currentCameraHeight').innerHTML   = Dom.get('cameraHeight').value   = cameraHeight;
-  Dom.get('currentDrawDistance').innerHTML   = Dom.get('drawDistance').value   = drawDistance;
-  Dom.get('currentFieldOfView').innerHTML    = Dom.get('fieldOfView').value    = fieldOfView;
-  Dom.get('currentFogDensity').innerHTML     = Dom.get('fogDensity').value     = fogDensity;
+  ratio = w/width;
+  width = w;
 }
-
-//=========================================================================
