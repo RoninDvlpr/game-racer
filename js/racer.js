@@ -1,7 +1,7 @@
 var fps            = 60;                      // how many 'update' frames per second
 var step           = 1/fps;                   // how long is each frame (in seconds)
-var width          = window.innerWidth;                    // logical canvas width
-var height         = window.innerHeight;                     // logical canvas height
+var width          = window.innerWidth;       // logical canvas width
+var height         = window.innerHeight;      // logical canvas height
 var centrifugal    = 0.3;                     // centrifugal force multiplier when going around curves
 var offRoadDecel   = 0.99;                    // speed multiplier when off road (e.g. you lose 2% speed each update frame)
 var skySpeed       = 0.001;                   // background sky layer scroll speed when going around curve (or up hill)
@@ -28,7 +28,7 @@ var cameraDepth    = null;                    // z distance camera is from scree
 var drawDistance   = 300;                     // number of segments to draw
 var playerX        = 0;                       // player x offset from center of road (-1 to 1 to stay independent of roadWidth)
 var playerZ        = null;                    // player relative z distance from camera (computed)
-var fogDensity     = 5;                       // exponential fog density
+var fogDensity     = 1;                       // exponential fog density
 var position       = 0;                       // current camera Z position (add playerZ to get player's absolute Z position)
 var speed          = 0;                       // current speed
 var maxSpeed       = segmentLength/step;      // top speed (ensure we can't move more than 1 segment in a single frame to make collision detection easier)
@@ -37,9 +37,10 @@ var breaking       = -maxSpeed;               // deceleration rate when braking
 var decel          = -maxSpeed/5;             // 'natural' deceleration rate when neither accelerating, nor braking
 var offRoadDecel   = -maxSpeed/2;             // off road deceleration is somewhere in between
 var offRoadLimit   =  maxSpeed/4;             // limit when off road deceleration no longer applies (e.g. you can always go at least this speed even when off road)
-var totalCars      = 200;                     // total number of cars on the road
+var totalCars      = 10;                     // total number of cars on the road
 var currentLapTime = 0;                       // current lap time
 var lastLapTime    = null;                    // last lap time
+var lap            = 0;
 
 var keyLeft        = false;
 var keyRight       = false;
@@ -58,7 +59,6 @@ var racer;
 //=========================================================================
 // UPDATE THE GAME WORLD
 //=========================================================================
-
 function update(dt) {
 
   var n, car, carW, sprite, spriteW;
@@ -66,7 +66,7 @@ function update(dt) {
   var playerW       = SPRITES.PLAYER_STRAIGHT.w * SPRITES.SCALE;
   var speedPercent  = speed/maxSpeed;
   var dx            = dt * 2 * speedPercent; // at top speed, should be able to cross from left to right (-1 to 1) in 1 second
-  var startPosition = position;
+  startPosition = position;
 
   updateCars(dt, playerSegment, playerW);
 
@@ -123,18 +123,12 @@ function update(dt) {
   treeOffset = Util.increase(treeOffset, treeSpeed * playerSegment.curve * (position-startPosition)/segmentLength, 1);
 
   if (position > playerZ) {
+    if(startPosition < 1000) console.log("PH:",currentLapTime, startPosition, playerZ)
     if (currentLapTime && (startPosition < playerZ)) {
       lastLapTime    = currentLapTime;
       currentLapTime = 0;
       if (lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time)) {
-        Dom.storage.fast_lap_time = lastLapTime;
         updateHud('fast_lap_time', formatTime(lastLapTime));
-        Dom.addClassName('fast_lap_time', 'fastest');
-        Dom.addClassName('last_lap_time', 'fastest');
-      }
-      else {
-        Dom.removeClassName('fast_lap_time', 'fastest');
-        Dom.removeClassName('last_lap_time', 'fastest');
       }
       updateHud('last_lap_time', formatTime(lastLapTime));
       Dom.show('last_lap_time');
@@ -144,7 +138,7 @@ function update(dt) {
     }
   }
 
-  updateHud('speed',            5 * Math.round(speed/500));
+  updateHud('speed',            Math.round(speed/100));
   updateHud('current_lap_time', formatTime(currentLapTime));
 }
 
@@ -419,7 +413,7 @@ function resetRoad() {
   segments = [];
 
   addStraight(ROAD.LENGTH.SHORT);
-  addLowRollingHills();
+  /*addLowRollingHills();
   addSCurves();
   addCurve(ROAD.LENGTH.MEDIUM, ROAD.CURVE.MEDIUM, ROAD.HILL.LOW);
   addBumps();
@@ -433,7 +427,7 @@ function resetRoad() {
   addCurve(ROAD.LENGTH.LONG, ROAD.CURVE.MEDIUM, -ROAD.HILL.LOW);
   addBumps();
   addHill(ROAD.LENGTH.LONG, -ROAD.HILL.MEDIUM);
-  addStraight();
+  addStraight();*/
   addSCurves();
   addDownhillToEnd();
 
@@ -502,7 +496,7 @@ function resetCars() {
     offset = Math.random() * Util.randomChoice([-0.8, 0.8]);
     z      = Math.floor(Math.random() * segments.length) * segmentLength;
     sprite = Util.randomChoice(SPRITES.CARS);
-    speed  = maxSpeed/4 + Math.random() * maxSpeed/(sprite == SPRITES.SEMI ? 4 : 2);
+    speed  = maxSpeed/2 + Math.random() * maxSpeed/(sprite == SPRITES.SEMI ? 4 : 2);
     car = { offset: offset, z: z, sprite: sprite, speed: speed };
     segment = findSegment(car.z);
     segment.cars.push(car);
@@ -517,16 +511,6 @@ function resetCars() {
 Game.run({
   canvas: canvas, render: render, update: update, step: step,
   images: ["background", "sprites"],
-  keys: [
-    { keys: [KEY.LEFT,  KEY.A], mode: 'down', action: function() { keyLeft   = true;  } },
-    { keys: [KEY.RIGHT, KEY.D], mode: 'down', action: function() { keyRight  = true;  } },
-    { keys: [KEY.UP,    KEY.W], mode: 'down', action: function() { keyFaster = true;  } },
-    { keys: [KEY.DOWN,  KEY.S], mode: 'down', action: function() { keySlower = true;  } },
-    { keys: [KEY.LEFT,  KEY.A], mode: 'up',   action: function() { keyLeft   = false; } },
-    { keys: [KEY.RIGHT, KEY.D], mode: 'up',   action: function() { keyRight  = false; } },
-    { keys: [KEY.UP,    KEY.W], mode: 'up',   action: function() { keyFaster = false; } },
-    { keys: [KEY.DOWN,  KEY.S], mode: 'up',   action: function() { keySlower = false; } }
-  ],
   ready: function(images) {
     background = images[0];
     sprites    = images[1];

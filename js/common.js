@@ -80,20 +80,6 @@ var Util = {
 }
 
 //=========================================================================
-// POLYFILL for requestAnimationFrame
-//=========================================================================
-
-if (!window.requestAnimationFrame) { // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
-  window.requestAnimationFrame = window.webkitRequestAnimationFrame || 
-                                 window.mozRequestAnimationFrame    || 
-                                 window.oRequestAnimationFrame      || 
-                                 window.msRequestAnimationFrame     || 
-                                 function(callback, element) {
-                                   window.setTimeout(callback, 1000 / 60);
-                                 }
-}
-
-//=========================================================================
 // GAME LOOP helpers
 //=========================================================================
 
@@ -105,7 +91,6 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
 
       options.ready(images); // tell caller to initialize itself because images are loaded and we're ready to rumble
 
-      Game.setKeyListener(options.keys);
 
       var canvas = options.canvas,    // canvas render target is provided by caller
           update = options.update,    // method to update game logic is provided by caller
@@ -115,9 +100,16 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
           last   = Util.timestamp(),
           dt     = 0,
           gdt    = 0;
+          lap    = 0;
 
 
       var b = Builder._$, C = anm.C;
+
+      var speedometerB    = b('speedometer')   .text([ 50, 100 ],"0");
+      var currentLapTimeB = b('currentLapTime').text([ 50, 120 ],"0");
+      var fastLapTimeB    = b('fastLapTime')   .text([ 50, 140 ],"" + formatTime(Util.toFloat(Dom.storage.fast_lap_time)));
+      var lastLapTimeB    = b('lastLapTime')   .text([ 50, 160 ],"0");
+
 
       var scene = b('scene')
                     .modify(function(t) {
@@ -131,32 +123,51 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
                     .paint(function(ctx) {
                       render(ctx);
                     });
+      scene.add(speedometerB)
+           .add(currentLapTimeB)
+           .add(fastLapTimeB)
+           .add(lastLapTimeB);
+
+      scene.on(C.X_KDOWN, function(evt) {
+          switch(evt.key) {
+            case KEY.UP:   case KEY.W: keyFaster = true; break;
+            case KEY.LEFT: case KEY.A: keyLeft   = true; break;
+            case KEY.DOWN: case KEY.S: keySlower = true; break;
+            case KEY.RIGHT:case KEY.D: keyRight  = true; break;
+          }
+      }).on(C.X_KUP, function(evt) {
+          switch(evt.key) {
+            case KEY.UP:   case KEY.W: keyFaster = false; break;
+            case KEY.LEFT: case KEY.A: keyLeft   = false; break;
+            case KEY.DOWN: case KEY.S: keySlower = false; break;
+            case KEY.RIGHT:case KEY.D: keyRight  = false; break;
+          }
+      }).modify(function(t) {
+        if (position > playerZ) {
+          if(startPosition < 1000) console.log(currentLapTime, startPosition, playerZ)
+          if (currentLapTime && (startPosition < playerZ)) {
+            console.log("in");
+            if(lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time) && lastLapTime > 0) {
+              Dom.storage.fast_lap_time = lastLapTime;
+              fastLapTimeB.text([ 50, 140 ],"" + formatTime(lastLapTime));
+            }
+            lastLapTimeB.text([ 50, 160 ],"" + formatTime(lastLapTime));
+            lap++;
+          }
+        }
+        speedometerB.text([ 50, 100 ],"" + Math.round(speed/100));
+        currentLapTimeB.text([ 50, 120 ],"" + formatTime(currentLapTime));
+      });
 
       var racer = createPlayer(canvas.id, {
         "mode" : C.M_DYNAMIC,
         "anim" : {
-          "fps": 50, //doesn't actually work
+          "fps": 60, 
           "bgcolor" : { color : "#72D7EE" }
         } 
       }).load(scene);
 
       racer.play();
-
-      // function frame() {
-      //   now = Util.timestamp();
-      //   dt  = Math.min(1, (now - last) / 1000); // using requestAnimationFrame have to be able to handle large delta's caused when it 'hibernates' in a background or non-visible tab
-      //   gdt = gdt + dt;
-      //   while (gdt > step) {
-      //     gdt = gdt - step;
-      //     update(step);
-      //   }
-      //   render();
-      //   stats.update();
-      //   last = now;
-      //   requestAnimationFrame(frame, canvas);
-      // }
-      // frame(); // lets get this party started
-      // Game.playMusic();
     });
   },
 
@@ -177,25 +188,6 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
       Dom.on(result[n], 'load', onload);
       result[n].src = "images/" + name + ".png";
     }
-  },
-
-  //---------------------------------------------------------------------------
-
-  setKeyListener: function(keys) {
-    var onkey = function(keyCode, mode) {
-      var n, k;
-      for(n = 0 ; n < keys.length ; n++) {
-        k = keys[n];
-        k.mode = k.mode || 'up';
-        if ((k.key == keyCode) || (k.keys && (k.keys.indexOf(keyCode) >= 0))) {
-          if (k.mode == mode) {
-            k.action.call();
-          }
-        }
-      }
-    };
-    Dom.on(document, 'keydown', function(ev) { onkey(ev.keyCode, 'down'); } );
-    Dom.on(document, 'keyup',   function(ev) { onkey(ev.keyCode, 'up');   } );
   },
 
   //---------------------------------------------------------------------------
