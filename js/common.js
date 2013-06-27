@@ -1,3 +1,4 @@
+const SENTINEL        = Math.pow(2,32) - 1; 
 //=========================================================================
 // minimalist DOM helpers
 //=========================================================================
@@ -149,17 +150,23 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
       var fastLapTimeDisp = b('fastLapTime');
       var lastLapTimeDisp = b('lastLapTime');
       var speedometerText = b('speedometerText');
-      changeText(speedometerText,[0,0],"0 mph",false,0,0);
+      changeText(speedometerText,[0,0],"0 mph",false,-67,10);
       var speedometer     = b('speedometer')
                               .rect([0,0],[2,hudWidth/2])
                               .reg([0,hudWidth/4])
                               .modify(function(t) {
-                                this.angle = Util.toRadians(speed/100 - 110);
+                                this.angle = Util.toRadians(13/12*speed/100 - 105); // scale
                               })
+
       var speedometerFull = b().circle([0,canvas.height-hudHeight/2-hudWidth/2-20],hudWidth/2)
-                               .fill("rgba(0,0,0,.9)")
-                               .add(speedometer)
-                               .add(speedometerText);
+                               .fill("rgba(0,0,0,.9)")                         
+      for(var a=-105;a<=25;a+=10) {
+        speedometerFull.add(b().rect([0,0],[2,10])
+                               .reg([0,hudWidth/2-5])
+                               .fill(a>0?'rgb(240,20,20)':'rgb(255,255,255)')
+                               .rotate([0,SENTINEL],[Util.toRadians(a),Util.toRadians(a)]))
+      }
+      speedometerFull.add(speedometer).add(speedometerText);
 
       var hud = b('hud').rect([0,0],[hudWidth,hudHeight])
                         .fill('rgba(0, 0, 0, 0.7)')
@@ -205,7 +212,7 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
             }
           }
         }
-        changeText(speedometerText,[0,0],Math.round(speed/100) + " mph",false,-hudWidth/3,10);
+        changeText(speedometerText,[0,0],Math.round(speed/100) + " mph",false,-67,10);
         changeText(curLapTimeDisp,[margin,yOffset],"" + formatTime(currentLapTime),false);
       });
       scene.add(hud);
