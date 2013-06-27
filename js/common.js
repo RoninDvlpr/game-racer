@@ -75,8 +75,10 @@ var Util = {
     var min2 = x2 - (w2*half);
     var max2 = x2 + (w2*half);
     return ! ((max1 < min2) || (min1 > max2));
-  }
+  },
 
+  toRadians: function(degrees) {return degrees * Math.PI / 180; },
+  toDegrees: function(radians) {return radians * 180 / Math.PI; }
 }
 
 //=========================================================================
@@ -100,16 +102,10 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
           last   = Util.timestamp(),
           dt     = 0,
           gdt    = 0;
-          lap    = 0;
+          curLap = 1;
 
 
       var b = Builder._$, C = anm.C;
-
-      var speedometerB    = b('speedometer')   .text([ 50, 100 ],"0");
-      var currentLapTimeB = b('currentLapTime').text([ 50, 120 ],"0");
-      var fastLapTimeB    = b('fastLapTime')   .text([ 50, 140 ],"" + formatTime(Util.toFloat(Dom.storage.fast_lap_time)));
-      var lastLapTimeB    = b('lastLapTime')   .text([ 50, 160 ],"0");
-
 
       var scene = b('scene')
                     .modify(function(t) {
@@ -123,10 +119,6 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
                     .paint(function(ctx) {
                       render(ctx);
                     });
-      scene.add(speedometerB)
-           .add(currentLapTimeB)
-           .add(fastLapTimeB)
-           .add(lastLapTimeB);
 
       scene.on(C.X_KDOWN, function(evt) {
           switch(evt.key) {
@@ -142,24 +134,84 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
             case KEY.DOWN: case KEY.S: keySlower = false; break;
             case KEY.RIGHT:case KEY.D: keyRight  = false; break;
           }
-      }).modify(function(t) {
-        if (position > playerZ) {
-          if(startPosition < 1000) console.log(currentLapTime, startPosition, playerZ)
-          if (currentLapTime && (startPosition < playerZ)) {
-            console.log("in");
-            if(lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time) && lastLapTime > 0) {
-              Dom.storage.fast_lap_time = lastLapTime;
-              fastLapTimeB.text([ 50, 140 ],"" + formatTime(lastLapTime));
+      })
+      var hudWidth = Math.max(200,canvas.width*.16);
+      var hudHeight = 200;
+      var labelHeight = 15;
+      var valueHeight = 30;
+      var margin = 4;
+      var yOffset = valueHeight+labelHeight+ margin;
+      var font = "Century Gothic";
+      
+      var positionDisp    = b('position');                    
+      var lapCounter      = b('lapCounter');
+      var curLapTimeDisp  = b('currentLapTime');
+      var fastLapTimeDisp = b('fastLapTime');
+      var lastLapTimeDisp = b('lastLapTime');
+      var speedometerText = b('speedometerText');
+      changeText(speedometerText,[0,0],"0 mph",false,0,0);
+      var speedometer     = b('speedometer')
+                              .rect([0,0],[2,hudWidth/2])
+                              .reg([0,hudWidth/4])
+                              .modify(function(t) {
+                                this.angle = Util.toRadians(speed/100 - 110);
+                              })
+      var speedometerFull = b().circle([0,canvas.height-hudHeight/2-hudWidth/2-20],hudWidth/2)
+                               .fill("rgba(0,0,0,.9)")
+                               .add(speedometer)
+                               .add(speedometerText);
+
+      var hud = b('hud').rect([0,0],[hudWidth,hudHeight])
+                        .fill('rgba(0, 0, 0, 0.7)')
+                        .reg([-hudWidth/2,-hudHeight/2])
+                        .move([canvas.width-(hudWidth+10),10])
+                        .add(genElem(positionDisp    , [ margin, 0            ], "1 / " + numRacers                   , "Position"      ))
+                        .add(genElem(lapCounter      , [ margin, 0            ], "1 / " + numLaps                     , "Lap"        , 0))
+                        .add(genElem(curLapTimeDisp  , [ margin, yOffset      ], "00:00.00"                           , "Current Lap"   ))
+                        .add(genElem(fastLapTimeDisp , [ margin, yOffset*2    ], formatTime(Dom.storage.fast_lap_time), "Fastest Lap"   ))
+                        .add(genElem(lastLapTimeDisp , [ margin, yOffset*3    ], "00:00.00"                           , "Last Lap"      ))
+                        .add(speedometerFull)
+
+      function genElem(elem, pos, val, labelVal, offX, offY) {
+        return b().add(changeText(null,pos,labelVal, true, offX, offY))
+                  .add(changeText(elem,pos,val,false, offX, offY))
+      }
+      // i.e. b(), [0,10], "1/6", false (true if it is a label for a value)
+      function changeText(elem, pos, val, label, offX, offY) {
+        offX = typeof offX !== 'undefined' ? offX : -hudWidth/2;
+        offY = typeof offY !== 'undefined' ? offY : -hudHeight/2;
+        elem = !elem ? b() : elem;
+
+        var color = label?'#DDDDDD':'#EFEFEF';
+        var pos   = label?pos: [ pos[0] + labelHeight, pos[1] + labelHeight ];
+        return elem.text(pos,val,label?labelHeight:valueHeight,font).move([offX,offY]).fill(color);
+      }
+                        
+      
+      hud.modify(function(t) {
+        console.log(carsPassed);
+        if (player.position > playerZ) {
+          if (lap > curLap) {
+            curLap = lap;
+            if(curLap > numLaps) {
+              // End game
+            } else {
+              changeText(lapCounter,[margin,0],lap + " / " + numLaps,false,0);
+              if(lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time) && lastLapTime > 0) {
+                Dom.storage.fast_lap_time = lastLapTime;
+                changeText(fastLapTimeDisp,[margin,yOffset*2],"" + formatTime(lastLapTime),false);
+              }
+              changeText(lastLapTimeDisp,[margin,yOffset*3],"" + formatTime(lastLapTime),false);
             }
-            lastLapTimeB.text([ 50, 160 ],"" + formatTime(lastLapTime));
-            lap++;
           }
         }
-        speedometerB.text([ 50, 100 ],"" + Math.round(speed/100));
-        currentLapTimeB.text([ 50, 120 ],"" + formatTime(currentLapTime));
+        changeText(speedometerText,[0,0],Math.round(speed/100) + " mph",false,-hudWidth/3,10);
+        changeText(curLapTimeDisp,[margin,yOffset],"" + formatTime(currentLapTime),false);
       });
+      scene.add(hud);
 
       var racer = createPlayer(canvas.id, {
+        //"debug": true,
         "mode" : C.M_DYNAMIC,
         "anim" : {
           "fps": 60, 
