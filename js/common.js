@@ -197,11 +197,11 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
       
       hud.modify(function(t) {
         console.log(carsPassed);
-        if (player.position > playerZ) {
+        if (player.position > camera.playerZ) {
           if (lap > curLap) {
             curLap = lap;
             if(curLap > numLaps) {
-              // End game
+              // TODO: End game
             } else {
               changeText(lapCounter,[margin,0],lap + " / " + numLaps,false,0);
               if(lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time) && lastLapTime > 0) {
