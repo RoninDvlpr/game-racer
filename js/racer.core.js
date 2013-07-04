@@ -62,7 +62,7 @@ function update(dt) {
 
   var n, car, carW, sprite, spriteW;
   var playerSegment = findSegment(player.z+camera.playerZ);
-  var playerW       = SPRITES.PLAYER_STRAIGHT.w * SPRITES.SCALE;
+  var playerW       = SPRITES.CAR_STRAIGHT.w * SPRITES.SCALE;
   var speedPercent  = player.speed/maxSpeed;
   var dx            = dt * 2 * speedPercent; // at top speed, should be able to cross from left to right (-1 to 1) in 1 second
   startPosition = player.z;
@@ -346,20 +346,16 @@ function resetRoad() {
 function resetSprites() {
   var n, i;
 
-  addSprite(20,  SPRITES.BILLBOARD07, -1.2);
-  addSprite(40,  SPRITES.BILLBOARD06, -1.2);
-  addSprite(60,  SPRITES.BILLBOARD08, -1.2);
-  addSprite(80,  SPRITES.BILLBOARD09, -1.2);
-  addSprite(100, SPRITES.BILLBOARD01, -1.2);
-  addSprite(120, SPRITES.BILLBOARD02, -1.2);
-  addSprite(140, SPRITES.BILLBOARD03, -1.2);
-  addSprite(160, SPRITES.BILLBOARD04, -1.2);
-  addSprite(180, SPRITES.BILLBOARD05, -1.2);
+  addSprite(20,  SPRITES.BILLBOARD, -1.2);
+  addSprite(60,  SPRITES.BILLBOARD, -1.2);
+  addSprite(100, SPRITES.BILLBOARD, -1.2);
+  addSprite(140, SPRITES.BILLBOARD, -1.2);
+  addSprite(180, SPRITES.BILLBOARD, -1.2);
 
-  addSprite(240,                  SPRITES.BILLBOARD07, -1.2);
-  addSprite(240,                  SPRITES.BILLBOARD06,  1.2);
-  addSprite(segments.length - 25, SPRITES.BILLBOARD07, -1.2);
-  addSprite(segments.length - 25, SPRITES.BILLBOARD06,  1.2);
+  addSprite(240,                  SPRITES.BILLBOARD, -1.2);
+  addSprite(240,                  SPRITES.BILLBOARD,  1.2);
+  addSprite(segments.length - 25, SPRITES.BILLBOARD, -1.2);
+  addSprite(segments.length - 25, SPRITES.BILLBOARD,  1.2);
 
   for(n = 10 ; n < 200 ; n += 4 + Math.floor(n/100)) {
     addSprite(n, SPRITES.PALM_TREE, 0.6 + Math.random()*0.5);
