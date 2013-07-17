@@ -379,12 +379,20 @@ var Render = {
   player: function(ctx, width, height, resolution, roadWidth, sprites, speedPercent, scale, destX, destY, steer, updown) {
     var bounce = (1.1 * Math.random() * speedPercent * resolution) * Util.randomChoice([-1,1]);
     var sprite;
-    updown = updown < 5 ? (updown < -11 ? 0 : 1) : 2; // custom tuned, what feels right
-    var dx = player.car.dx*100;
-    var lrOrient = Math.abs(dx-0);
-    if (lrOrient < .1) lrOrient = 0;
-    else               lrOrient = Util.clamp(0,Math.ceil(lrOrient),2) * Util.getSign(dx);
-    sprite = C.SPRITES.CAR_ORIENT[updown][lrOrient+3];
+    if(player.car.reset > 0) {
+        var time = player.car.reset;
+        var step = 15;
+        sprite = time%step > 10 ? C.SPRITES.EXPLOSION0 :
+                 time%step > 5  ? C.SPRITES.EXPLOSION1 :
+                                  C.SPRITES.EXPLOSION2 ;
+    } else {
+        updown = updown < 5 ? (updown < -11 ? 0 : 1) : 2; // custom tuned, what feels right
+        var dx = player.car.dx*100;
+        var lrOrient = Math.abs(dx-0);
+        if (lrOrient < .1) lrOrient = 0;
+        else               lrOrient = Util.clamp(0,Math.ceil(lrOrient),2) * Util.getSign(dx);
+        sprite = C.SPRITES.CAR_ORIENT[updown][lrOrient+3];
+    }
     Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce, -0.5, -1,null);
   },
 
@@ -537,9 +545,9 @@ function render(ctx) {
     for(i = 0 ; i < segment.sprites.length ; i++) {
       sprite      = segment.sprites[i];
       spriteScale = segment.p1.screen.scale;
-      spriteX     = segment.p1.screen.x + (spriteScale * sprite.offset * C.roadWidth * width/2);
+      spriteX     = segment.p1.screen.x + (spriteScale * sprite.x * C.roadWidth * width/2);
       spriteY     = segment.p1.screen.y + (sprite.source == C.SPRITES.COLUMN ? spriteScale*60000 : 0);
-      Render.sprite(ctx, width, height, resolution, C.roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.offset < 0 ? -1 : 0), -1, segment.clip);
+      Render.sprite(ctx, width, height, resolution, C.roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip);
     }
 
     if (segment == playerSegment) {

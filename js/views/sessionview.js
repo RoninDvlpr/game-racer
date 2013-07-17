@@ -16,7 +16,7 @@ define(['backbone', 'handlebars'], function (Backbone, Handlebars) {
             return this;
         },
         setView : function(gameMode, gameInfo) {
-            gameInfo.duration = { type: "point", cond: 7}
+            gameInfo.duration = { type: "point", cond: 7};
             modelJSON = gameInfo;
             this.render();
             this.$el.addClass("rendered");

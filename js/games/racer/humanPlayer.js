@@ -1,5 +1,5 @@
 // A basic AI implementation for the racing game
-define(['games/racer/util','games/racer/common','games/racer/racer.core'], function (Util,C,racer) {
+define(['games/racer/util','games/racer/common','games/racer/racer.core'], function (Util,C,Core) {
 
 var humanPlayer = (function() {
     var player = function() {
@@ -12,46 +12,53 @@ var humanPlayer = (function() {
         this.place     = null;                  // position in the race, calculated each step
         this.finished  = false;                 // boolean whether the given player is finished
         this.isYou     = true;                  // used to determine that you are the player
+        this.car.reset = -1;                     // used to determine if the car has crashed recently
 
         this.setPlayerNum = function(playerNum) {
             this.pNum  = playerNum;
             this.car.x = (playerNum%C.lanes - 1)*2/3; // Lines players up at -2/3, 0, 2/3
             this.car.z = (C.trackLength-Math.floor(playerNum/C.lanes)*C.segmentLength*5)%C.trackLength;
-            var segment = racer.findSegment(this.car.z);
+            var segment = Core.findSegment(this.car.z);
             segment.cars.push(this);
         }
     };
 
     player.prototype = {
         move: function(dt) {
-            var oldSegment = racer.findSegment(this.car.z);
+            if(this.car.reset < 0) {
+                var oldSegment = Core.findSegment(this.car.z);
 
-            //this.car.x       = this.car.x + this.steer();
-            this.steer(dt);
-            this.accelerate(dt);
-            var newSegment = racer.findSegment(this.car.z);
+                //this.car.x       = this.car.x + this.steer();
+                this.steer(dt);
+                this.accelerate(dt);
+                var newSegment = Core.findSegment(this.car.z);
 
-            if ((this.car.x < -1) || (this.car.x > 1)) {
-                if (this.car.speed > C.offRoadLimit) this.car.speed = Util.accelerate(this.car.speed, C.offRoadDecel, dt);
-                this.checkTerrainCollisions(newSegment);
-            }
+                if ((this.car.x < -1) || (this.car.x > 1)) {
+                    if (this.car.speed > C.offRoadLimit) this.car.speed = Util.accelerate(this.car.speed, C.offRoadDecel, dt);
+                    this.checkTerrainCollisions(newSegment);
+                }
 
-            this.checkCarCollisions(newSegment);
+                this.checkCarCollisions(newSegment);
 
-            // regulate
-            this.car.x = Util.limit(this.car.x, -3, 3);                 // dont ever let it go too far out of bounds
-            this.car.speed = Util.limit(this.car.speed, 0, C.maxSpeed); // or exceed maxSpeed
+                // regulate
+                this.car.x = Util.limit(this.car.x, -3, 3);                 // dont ever let it go too far out of bounds
+                this.car.speed = Util.limit(this.car.speed, 0, C.maxSpeed); // or exceed maxSpeed
 
-            newSegment  = racer.findSegment(this.car.z);
-            if (oldSegment != newSegment) {
-                var index = oldSegment.cars.indexOf(this);
-                oldSegment.cars.splice(index, 1);
-                newSegment.cars.push(this);
+                newSegment  = Core.findSegment(this.car.z);
+                if (oldSegment != newSegment) {
+                    var index = oldSegment.cars.indexOf(this);
+                    oldSegment.cars.splice(index, 1);
+                    newSegment.cars.push(this);
+                }
+            } else if(this.car.reset == 0) {
+                this.resetCar();
+            }else {
+                this.car.reset--;
             }
 
             if(this.finished) return; //don't track once done, but you can still drive around
             if(C.raceActive &&!this.finished) {
-                this.place = racer.getPlace(0);
+                this.place = Core.getPlace(0);
                 if (this.car.currentLapTime && (this.car._z > this.car.z)) {
                     this.car.lapTimes.push(this.car.currentLapTime);
                     this.car.lap++;
@@ -99,17 +106,15 @@ var humanPlayer = (function() {
         },
         checkTerrainCollisions : function(segment) {
             for(var n = 0 ; n < segment.sprites.length ; n++) {
-              var sprite  = segment.sprites[n];
-              var spriteW = sprite.source.w * C.SPRITES.SCALE;
-              if (Util.overlap(this.car.x, this.playerW, sprite.x + spriteW/2 * (sprite.x > 0 ? 1 : -1), spriteW)) {
-                // collided with something, stop the car
-                this.car.speed = C.maxSpeed/5;
-                //this.car.speed = 0;
-                //this.car.reset = true;
-                this.car.z = this.car._z;
-                //TODO: Add explosion
-                break;
-              }
+                var sprite  = segment.sprites[n];
+                var spriteW = sprite.source.w * C.SPRITES.SCALE;
+                if (Util.overlap(this.car.x, this.playerW, sprite.x + spriteW/2 * (sprite.x > 0 ? 1 : -1), spriteW)) {
+                    this.car.reset = Math.floor(C.fps*(1 + this.car.speed/this.maxSpeed));     // Player draw function uses this value to determine explosions
+                    console.log(this.car.reset)
+                    this.car.speed = 0;
+                    this.car.z = this.car._z;
+                    break;
+                }
             }
         },
         checkCarCollisions : function(segment) {
@@ -118,16 +123,18 @@ var humanPlayer = (function() {
                 var carW = opponent.sprite.w * C.SPRITES.SCALE;
                 if (this.car.speed > opponent.car.speed) {
                     if (Util.overlap(this.car.x, this.playerW, opponent.car.x, carW, 0.8)) {
-                        this.car.speed    = opponent.car.speed * (opponent.car.speed/this.car.speed);
+                        this.car.speed    = opponent.car.speed * (opponent.car.speed/this.car.speed)/3;
                         this.car.z = this.car._z;
                         break;
                     }
                 }
             }
         },
-
-        getCar : function() {
-            return this.car;
+        resetCar : function() {
+            this.car.x = 0;
+            this.car.dx = 0;
+            this.car.speed = 0;
+            this.car.reset = -1;
         }
     };
 
