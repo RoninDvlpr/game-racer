@@ -1,29 +1,32 @@
-<!DOCTYPE html> 
-
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>Animatron Racing</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <link href="css/common.css" rel="stylesheet" type="text/css" />
-</head> 
+    <title>Animatron Games</title>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" href="css/global.css">
+
+    <script data-main="js/main" src="js/libs/require-2.1.6.js"></script>
+</head>
 
 <body>
-  <div id="racer">
-    <canvas id="canvas">
-      Sorry, this game cannot be run because your browser does not support the &lt;canvas&gt; element
-    </canvas>
-    <!-- Loading... -->
-  </div>
+    <div id="session-page">
+        <!--session-template-->
+    </div>
 
-  <audio id='music'>
-    <source src="music/racer.ogg">
-    <source src="music/racer.mp3">
-  </audio>
-  <span id="mute"></span>
+<!--==========HANDLEBARS TEMPLATES==========-->
 
-  <script type="text/javascript" src="js/libs/hardcore.js"></script>
-  <script type="text/javascript" src="js/racer.js"></script>
-  <script type="text/javascript" src="js/racer.core.js"></script>
+<script id="session-template" type="text/x-handlebars-template">
+    <!--h1 style="color:#111;">{{name}}</h1-->
+    <div id="game">
+        <canvas id="game-canvas" data-title="game-canvas"></canvas>
+        <div class="canvas-overlay"></div>
+    </div>
+</script>
 
-</body> 
+<script id="waiting-template" type="text/x-handlebars-template">
+    <p>Waiting for {{host}} to start the game</p>
+</script>
+
+</body>
 </html>
