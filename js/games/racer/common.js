@@ -22,10 +22,11 @@ common = {
   keyFaster      : false,
   keySlower      : false,
   raceActive     : false,
-  lanes          : 3                        // number of lanes
+  lanes          : 3,                       // number of lanes
+  centrifugal    : 4                        // The centrifugal force going around turns
 }
-common.step         = 1/common.fps;                     // how long is each frame (in seconds)
-common.maxSpeed     = common.segmentLength/common.step; // top speed (ensure we can't move more than 1 segment in a single frame to make collision detection easier)
+common.step         = 1/common.fps;                          // how long is each frame (in seconds)
+common.maxSpeed     = common.segmentLength/common.step;      // top speed (ensure we can't move more than 1 segment in a single frame to make collision detection easier)
 common.accel        =  common.maxSpeed/5;                    // acceleration rate - tuned until it 'felt' right
 common.breaking     = -common.maxSpeed;                      // deceleration rate when braking
 common.decel        = -common.maxSpeed/5;                    // 'natural' deceleration rate when neither accelerating, nor braking

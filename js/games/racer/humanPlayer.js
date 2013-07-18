@@ -31,6 +31,7 @@ var humanPlayer = (function() {
                 //this.car.x       = this.car.x + this.steer();
                 this.steer(dt);
                 this.accelerate(dt);
+                this.adjustCentrifugal(dt);
                 var newSegment = Core.findSegment(this.car.z);
 
                 if ((this.car.x < -1) || (this.car.x > 1)) {
@@ -41,7 +42,7 @@ var humanPlayer = (function() {
                 this.checkCarCollisions(newSegment);
 
                 // regulate
-                this.car.x = Util.limit(this.car.x, -3, 3);                 // dont ever let it go too far out of bounds
+                this.car.x = Util.limit(this.car.x, -3, 3);                 // don't ever let it go too far out of bounds
                 this.car.speed = Util.limit(this.car.speed, 0, C.maxSpeed); // or exceed maxSpeed
 
                 newSegment  = Core.findSegment(this.car.z);
@@ -88,8 +89,20 @@ var humanPlayer = (function() {
                 if(this.car.x != 0) this.car.dx -= this.car.dx/2;
             }
             this.car.x += this.car.dx;
-            var outwardForce = dx * C.playerSegment.curve / 4;
+        },
+        adjustCentrifugal : function(dt) {
+            var speedPercent  = this.car.speed/C.maxSpeed;
+            var dx            = 2*speedPercent*dt;
+            var dz            = this.car.z - this.car._z;
+            var sign          = C.playerSegment.curve < 0 ? -1 : 1;
+
+            var outwardForce = dx * C.playerSegment.curve / C.centrifugal;
             this.car.x = this.car.x - outwardForce;
+
+            var xoff          = Math.abs(sign - this.car.x);
+            var zoff          = dz * 0.03 * Math.pow(Math.abs(C.playerSegment.curve),1/3) * xoff;  //Adjust for a little longer distance traveled
+            this.car.z  -= zoff;
+            if(this.car.z < 0) this.car.z = C.trackLength - this.car.z;
         },
         accelerate : function(dt) {
             this.car._z = this.car.z;
