@@ -17,11 +17,14 @@ racer.update = function(dt) {
 
 function updateCars(dt) {
   var n, car, carsFinished = 0;
+  //var carLaps = [];
   for(n = 0 ; n < C.cars.length ; n++) {
     car = C.cars[n];
     car.move(dt);
     if(car.finished) carsFinished++;
+    //carLaps.push(car.lap);
   }
+  //console.log(carLaps);
   if(carsFinished == C.numRacers) C.raceActive = false;
 }
 
@@ -30,13 +33,14 @@ racer.findSegment = function (z) {
 }
 
 // Takes the index of the car you are trying to get the place of (0 for you)
+// Should only be used singly (don't call this in a loop for all players, because that's dumb.
 racer.getPlace = function(index) {
-  var you = C.cars[index].car, opponent;
+  var you = C.cars[index], opponent;
   var place = 1;
   for(var n = 0 ; n < C.cars.length ; n++) {
     if(n == index) continue;
-    opponent = C.cars[n].car;
-    if(opponent.lap > you.lap || (opponent.lap == you.lap && opponent.z > you.z)) place++;
+    opponent = C.cars[n];
+    if(opponent.lap > you.lap || (opponent.lap == you.lap && opponent.car.z > you.car.z)) place++;
   }
   return place;
 }

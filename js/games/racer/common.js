@@ -36,17 +36,7 @@ common.offRoadLimit =  common.maxSpeed/4;                    // limit when off r
 
 // CAR REFERENCE, all cars on the road should have a .car attribute with this object.
 // Make sure to use jQuery.extend(true, {}, common.carDefault) or your values will be global!
-common.carDefault = {
-  x                : 0,                     // car x offset from center of road (-1 to 1 to stay independent of roadWidth)
-  z                : 0,                     // car's absolute Z position
-  _z               : 0,                     // last z position
-  dx               : 0,                     // current horizontal velocity
-  speed            : 0,                     // current speed
-  currentLapTime   : 0,                     // current lap time
-  lapTimes         : [],                    // last lap time
-  lap              : 1,                     // current lap
-  percent          : 0                      // useful for interpolation during rendering phase
-}
+
 
 
 //=============================================================================
