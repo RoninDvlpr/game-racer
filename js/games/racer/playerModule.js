@@ -50,7 +50,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                     this.checkCarCollisions(newSegment);
                     this.regulate();
 
-                    newSegment  = Core.findSegment(this.car.z);
+                    newSegment  = Core.findSegment(this.car.z);  //reassess after checking for collisions
                     if (oldSegment != newSegment) {
                         var index = oldSegment.cars.indexOf(this);
                         oldSegment.cars.splice(index, 1);
@@ -110,9 +110,11 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                     var opponent  = segment.cars[n];
                     var carW = opponent.sprite.w * C.SPRITES.SCALE;
                     if (this.car.speed > opponent.car.speed) {
-                        if (Util.overlap(this.car.x, this.playerW, opponent.car.x, carW, 0.8)) {
-                            this.car.speed    = opponent.car.speed * (opponent.car.speed/this.car.speed)/3;
-                            //this.car.z = this.car._z; //enabling this causes cars to sometimes get stuck together forever
+                        if (Util.overlap(this.car.x, this.playerW, opponent.car.x, carW, 1)) {
+                            var tmp = this.car.speed;
+                            this.car.speed     = opponent.car.speed/3;
+                            opponent.car.speed += tmp * 3/5;
+                            this.car.z = this.car._z;
                             break;
                         }
                     }

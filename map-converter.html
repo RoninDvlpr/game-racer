@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Animatron Games</title>
+    <meta charset="utf-8">
+
+    <script src="http://player.animatron.com/latest/bundle/hardcore.js"></script>
+</head>
+
+<body>
+    <canvas id="game-canvas" data-title="game-canvas" width="500px" height="500px"></canvas>
+    <div id="data"></div>
+
+<script type="text/javascript">
+var b = Builder._$, C = anm.C;
+var data = document.getElementById('data');
+
+var scene = b().circle([100,100],3).transP([0,4], "M319.556 251.407 C329.548 250.552 339.323 225.902 338.444 209.963 C337.555 193.829 329 194.185 329 178 C329 161.815 357.331 164.359 350 145.593 C342.669 126.826 313.049 91.227 304 114 C285.89 159.576 260.571 136.368 258 156 C255.429 175.632 287.217 177.643 293 198 C298.783 218.357 259.006 228.734 269.37 241.926 C279.434 254.735 275.664 272.148 293 276 C310.502 279.889 302.928 252.831 319.556 251.407 M319.556 251.407 Z");
+
+scene.modify(function(t) {
+    if(t<4) data.innerHTML = data.innerHTML + this.x + "," + this.y + "\n";
+})
+
+var player = createPlayer("game-canvas", { "mode" : anm.C.M_DYNAMIC }).load(scene).play();
+
+</script>
+
+</body>
+</html>
