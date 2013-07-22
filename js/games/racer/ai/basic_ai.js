@@ -48,8 +48,6 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core','games/
         player.prototype.accelerate = function(dt) {
             this.car._z = this.car.z;
             this.car.z  = Util.increase(this.car.z, dt * this.car.speed, C.trackLength);
-            if(this.pNum == 1) console.log(this.car.z)
-
             this.car.speed = Util.accelerate(this.car.speed, this.car.accel, dt);
         };
 

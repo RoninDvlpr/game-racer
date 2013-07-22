@@ -12,10 +12,10 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core','games/
             var speedPercent  = this.car.speed/C.maxSpeed;
             var ax            = speedPercent/2;           // at top speed, should be able to cross from left to right (-1 to 1) in 1 second
             var dx            = 2*speedPercent*dt;
-            if (C.keyLeft) {
+            if (C.input.keyLeft) {
                 this.car.dx = Math.max(Util.accelerate(this.car.dx, -ax, dt),-dx);
             }
-            else if (C.keyRight) {
+            else if (C.input.keyRight) {
                 this.car.dx = Math.min(Util.accelerate(this.car.dx, ax, dt),dx);
             }
             else {
@@ -27,9 +27,9 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core','games/
             this.car._z = this.car.z;
             this.car.z  = Util.increase(this.car.z, dt * this.car.speed, C.trackLength);
 
-            if (C.keyFaster)
+            if (C.input.keyFaster && !C.input.keyDrift)
                 this.car.speed = Util.accelerate(this.car.speed, this.car.accel, dt);
-            else if (C.keySlower)
+            else if (C.input.keySlower)
                 this.car.speed = Util.accelerate(this.car.speed, C.breaking, dt);
             else
                 this.car.speed = Util.accelerate(this.car.speed, C.decel, dt);

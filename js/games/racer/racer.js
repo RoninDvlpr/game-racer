@@ -102,17 +102,19 @@ var Game = {
 
       scene.on(anm.C.X_KDOWN, function(evt) {
           switch(evt.key) {
-            case KEY.UP:   case KEY.W: C.keyFaster = true; break;
-            case KEY.LEFT: case KEY.A: C.keyLeft   = true; break;
-            case KEY.DOWN: case KEY.S: C.keySlower = true; break;
-            case KEY.RIGHT:case KEY.D: C.keyRight  = true; break;
+            case KEY.UP:   case KEY.W: C.input.keyFaster = true; break;
+            case KEY.LEFT: case KEY.A: C.input.keyLeft   = true; break;
+            case KEY.DOWN: case KEY.S: C.input.keySlower = true; break;
+            case KEY.RIGHT:case KEY.D: C.input.keyRight  = true; break;
+            case KEY.SPACE:            C.input.keyDrift  = true; break;
           }
       }).on(anm.C.X_KUP, function(evt) {
           switch(evt.key) {
-            case KEY.UP:   case KEY.W: C.keyFaster = false; break;
-            case KEY.LEFT: case KEY.A: C.keyLeft   = false; break;
-            case KEY.DOWN: case KEY.S: C.keySlower = false; break;
-            case KEY.RIGHT:case KEY.D: C.keyRight  = false; break;
+            case KEY.UP:   case KEY.W: C.input.keyFaster = false; break;
+            case KEY.LEFT: case KEY.A: C.input.keyLeft   = false; break;
+            case KEY.DOWN: case KEY.S: C.input.keySlower = false; break;
+            case KEY.RIGHT:case KEY.D: C.input.keyRight  = false; break;
+            case KEY.SPACE:            C.input.keyDrift  = false; break;
           }
       });
       var hudWidth = Math.max(200,canvas.width*.16);
@@ -414,15 +416,20 @@ function getCarSprite (car, updown) {
         var lrOrient;
         if(car.isYou) {
             var dx = car.car.dx*100;
-            lrOrient = Math.abs(dx-0);
-            if (lrOrient < .1) lrOrient = 0;
-            else               lrOrient = Util.clamp(0,Math.ceil(lrOrient),2) * Util.getSign(dx);
+
+            if(C.input.keyDrift) {
+                lrOrient = (C.input.keyLeft ? -1 : C.input.keyRight ? 1 : 0) * 3;
+                console.log(C.input,lrOrient);
+            } else {
+                lrOrient = Math.abs(dx-0);
+                if (lrOrient < .1) lrOrient = 0;
+                else               lrOrient = Util.clamp(0,Math.ceil(lrOrient),2) * Util.getSign(dx);
+            }
         } else {
-            lrOrient = 0;
             var xOff = (car.car.x+1) - (player.car.x+1);
             lrOrient = Math.abs(xOff) < .1 ?  0 :
                        xOff > 0            ? -2 : 2;
-            //TODO: Calculate other cars angles relative to you
+            //TODO: Calculate other cars' angles relative to you
         }
         sprite = C.SPRITES.CAR_ORIENT[updown][lrOrient+3];
     }
@@ -555,7 +562,7 @@ function render(ctx) {
                       camera.depth/camera.playerZ,
                       width/2,
                       (height/2) - (camera.depth/camera.playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
-                      player.car.speed * (C.keyLeft ? -1 : C.keyRight ? 1 : 0),
+                      player.car.speed * (C.input.keyLeft ? -1 : C.input.keyRight ? 1 : 0),
                       playerSegment.p2.world.y - playerSegment.p1.world.y,player);
       } else {
           sprite      = opponent.sprite;

@@ -36,8 +36,8 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
             move: function(dt) {
                 if(this.car.freezeTime < 0) {
                     var oldSegment = Core.findSegment(this.car.z);
-                    this.steer(dt);
                     this.accelerate(dt);
+                    this.steer(dt);
                     this.regulate();
                     this.adjustCentrifugal(dt);
                     this.car.percent = Util.percentRemaining(this.car.z, C.segmentLength);
@@ -90,7 +90,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
 
                 var xoff          = Math.abs(sign - this.car.x);
                 var zoff          = dz * 0.03 * Math.pow(Math.abs(C.playerSegment.curve),1/3) * xoff;  //Adjust for a little longer distance traveled
-                this.car.z  -= zoff;
+                if(!C.input.keyDrift) this.car.z  -= zoff;
                 if(this.car.z < 0) this.car.z = C.trackLength - this.car.z;
             },
             checkTerrainCollisions : function(segment) {

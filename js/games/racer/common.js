@@ -17,13 +17,16 @@ common = {
   segments       : [],                      // array of road segments
   cars           : [],                      // array of cars on the road
   trackLength    : null,                    // z length of entire track (computed)
-  keyLeft        : false,
-  keyRight       : false,
-  keyFaster      : false,
-  keySlower      : false,
-  raceActive     : false,
   lanes          : 3,                       // number of lanes
-  centrifugal    : 4                        // The centrifugal force going around turns
+  centrifugal    : 4,                       // The centrifugal force going around turns
+  raceActive     : false,
+  input          : {
+      keyLeft        : false,
+      keyRight       : false,
+      keyFaster      : false,
+      keySlower      : false,
+      keyDrift       : false
+  }
 }
 common.step         = 1/common.fps;                          // how long is each frame (in seconds)
 common.maxSpeed     = common.segmentLength/common.step;      // top speed (ensure we can't move more than 1 segment in a single frame to make collision detection easier)
