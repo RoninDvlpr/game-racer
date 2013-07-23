@@ -16,7 +16,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
 
             this.currentLapTime  = 0;                     // current lap time
             this.lapTimes        = [];                    // list of lap times (does not include current lap)
-            this.lap             = 1;                     // current lap
+            this.lap             = 0;                     // current lap
 
             this.sprite    = Util.randomChoice(C.SPRITES.CARS);           //
             this.playerW   = C.SPRITES.CAR_STRAIGHT.w * C.SPRITES.SCALE;  // width of the car
@@ -35,6 +35,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
             },
             move: function(dt) {
                 if(this.car.freezeTime < 0) {
+                    this.regulate();
                     var oldSegment = Core.findSegment(this.car.z);
                     this.accelerate(dt);
                     this.steer(dt);
@@ -64,7 +65,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
 
                 if(!this.finished) {           //don't track once done, but you can still drive around
                     if(this.isYou) this.place = Core.getPlace(0);
-                    if (this.currentLapTime > 5 && (this.car._z > this.car.z)) {  // hackish way to prevent double-counting
+                    if (this.lap > 0 && (this.car._z > this.car.z)) {  // hackish way to prevent double-counting
                         this.lapTimes.push(this.currentLapTime);
                         this.lap++;
                         if(this.lap > C.numLaps) {
@@ -73,6 +74,8 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                         else {
                             this.currentLapTime = 0;
                         }
+                    } else if(this.lap == 0 && (this.car._z > this.car.z)) {
+                        this.lap++;
                     }
                     else {
                         this.currentLapTime += dt;
@@ -112,8 +115,8 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                     if (this.car.speed > opponent.car.speed) {
                         if (Util.overlap(this.car.x, this.playerW, opponent.car.x, carW, 1)) {
                             var tmp = this.car.speed;
-                            this.car.speed     = opponent.car.speed/3;
-                            opponent.car.speed += tmp * 3/5;
+                            this.car.speed     = opponent.car.speed/3;  // slow you relative to them
+                            opponent.car.speed += tmp * 1/5;            // give them some of your momentum
                             this.car.z = this.car._z;
                             break;
                         }

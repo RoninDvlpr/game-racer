@@ -86,7 +86,7 @@ var Game = {
                         gdt = gdt + dt;
                         while (gdt > step) {
                           gdt = gdt - step;
-                          s = update(step);
+                          update(step);
                         }
                       } else if(t > 3 && t < 4) {   // Hack to start game (start it when t = 3)
                         C.raceActive = true;
@@ -382,8 +382,9 @@ var Render = {
   },
 
     player: function(ctx, width, height, resolution, roadWidth, sprites, scale, destX, destY, steer, updown, car) {
-    var bounce = (1.1 * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
-    var sprite = getCarSprite(car, updown);
+        setCamera(car.car);
+        var bounce = (1.1 * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
+        var sprite = getCarSprite(car, updown);
     Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce, -0.5, -1,null);
   },
 
@@ -402,6 +403,16 @@ var Render = {
   laneMarkerWidth: function(projectedRoadWidth, lanes) { return projectedRoadWidth/Math.max(32, 8*lanes); }
 
 };
+
+function setCamera(car) {
+    var speedPercent = car.speed/car.maxSpeed;
+    camera.fieldOfView = 100 + speedPercent*20;
+    camera.height = 1000 + speedPercent*20;
+
+    camera.depth           = 1 / Math.tan((camera.fieldOfView/2) * Math.PI/180);
+    camera.playerZ         = (camera.height * camera.depth) + speedPercent*100;
+    console.log(camera);
+}
 
 function getCarSprite (car, updown) {
     var sprite;
@@ -441,7 +452,9 @@ function getCarSprite (car, updown) {
 //=============================================================================
 function makeStartingLight(scene) {
     var colors   = [['red', '#910000'], ['yellow','#CEBA00'],['#00DB00','#005500']];
-    var width    = 0.07 * canvas.width;
+    var scale = (16/9) / (canvas.width/canvas.height);  //ratio it to a 16:9 display
+    console.log(scale);
+    var width    = 0.07 * canvas.width * scale;
     var padding  = 0.2 * width;
     var diameter = width - padding;
     var height   = (diameter + padding) * colors.length;
