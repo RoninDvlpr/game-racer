@@ -17,14 +17,14 @@ racer.update = function(dt) {
 
 function updateCars(dt) {
   var n, car, carsFinished = 0;
-  //var carLaps = [];
+  // var carLaps = [];
   for(n = 0 ; n < C.cars.length ; n++) {
     car = C.cars[n];
     car.move(dt);
     if(car.finished) carsFinished++;
-    //carLaps.push(car.lap);
+    // carLaps.push(car.lap);
   }
-  //console.log(carLaps);
+  // console.log(carLaps);
   if(carsFinished == C.numRacers) C.raceActive = false;
 }
 
@@ -33,7 +33,7 @@ racer.findSegment = function (z) {
 }
 
 // Takes the index of the car you are trying to get the place of (0 for you)
-// Should only be used singly (don't call this in a loop for all players, because that's dumb.
+// Should only be used singly (don't call this in a loop for all players, because that's stupidly inefficient
 racer.getPlace = function(index) {
   var you = C.cars[index], opponent;
   var place = 1;
@@ -70,8 +70,8 @@ racer.addSprite = function(n, sprite, offset,collidable) {
 };
 
 function addRoad(enter, hold, leave, curve, y) {
-  var startY   = lastY();
-  var endY     = startY + (Util.toInt(y, 0) * C.segmentLength);
+  var startY   = Math.round(lastY());
+  var endY     = Math.round(startY + (Util.toInt(y, 0) * C.segmentLength));
   var n, total = enter + hold + leave;
   for(n = 0 ; n < enter ; n++)
     addSegment(Util.easeIn(0, curve, n/enter), Util.easeInOut(startY, endY, n/total));
@@ -137,7 +137,7 @@ function addBumps() {
 
 function addDownhillToEnd(num) {
   num = num || 200;
-  addRoad(num, num, num, -ROAD.CURVE.EASY, -lastY()/C.segmentLength);
+  addRoad(num, num, num, -ROAD.CURVE.EASY, Math.round(-lastY()/C.segmentLength));
 }
 
 function resetRoad() {

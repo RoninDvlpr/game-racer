@@ -407,11 +407,10 @@ var Render = {
 function setCamera(car) {
     var speedPercent = car.speed/car.maxSpeed;
     camera.fieldOfView = 100 + speedPercent*20;
-    camera.height = 1000 + speedPercent*20;
+    camera.height = 1000 + speedPercent*80;
 
     camera.depth           = 1 / Math.tan((camera.fieldOfView/2) * Math.PI/180);
-    camera.playerZ         = (camera.height * camera.depth) + speedPercent*100;
-    console.log(camera);
+    camera.playerZ         = (camera.height * camera.depth) + speedPercent*150;
 }
 
 function getCarSprite (car, updown) {
@@ -453,7 +452,6 @@ function getCarSprite (car, updown) {
 function makeStartingLight(scene) {
     var colors   = [['red', '#910000'], ['yellow','#CEBA00'],['#00DB00','#005500']];
     var scale = (16/9) / (canvas.width/canvas.height);  //ratio it to a 16:9 display
-    console.log(scale);
     var width    = 0.07 * canvas.width * scale;
     var padding  = 0.2 * width;
     var diameter = width - padding;

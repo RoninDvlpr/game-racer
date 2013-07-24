@@ -7,10 +7,12 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                 z                : 0,                     // car's absolute Z position
                 _z               : 0,                     // last z position
                 dx               : 0,                     // current horizontal velocity
+                dz               : 0,                     // change in z in this step (slightly different from speed when accounting for turns, etc.)
                 speed            : 0,                     // current speed
                 percent          : 0,                     // useful for interpolation during rendering phase
                 freezeTime       : -1,                    // used to determine if the car has crashed recently
-                maxSpeed         : C.maxSpeed
+                maxSpeed         : C.maxSpeed,
+                length           : C.segmentLength*3      // physical length of the car
             };
             this.car.accel       = this.car.maxSpeed/5;
 
@@ -29,7 +31,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
             setPlayerNum : function(playerNum) {
                 this.pNum  = playerNum;
                 this.car.x = (playerNum%C.lanes - 1)*2/3; // Lines players up at -2/3, 0, 2/3
-                this.car.z = (C.trackLength-Math.floor(playerNum/C.lanes)*C.segmentLength*5)%C.trackLength;
+                this.car.z = (C.trackLength - 1 - Math.floor(playerNum/C.lanes)*C.segmentLength*5)%C.trackLength;  //The -1 is to make sure nobody ends up at z=0
                 var segment = Core.findSegment(this.car.z);
                 segment.cars.push(this);
             },
@@ -114,9 +116,9 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                     var carW = opponent.sprite.w * C.SPRITES.SCALE;
                     if (this.car.speed > opponent.car.speed) {
                         if (Util.overlap(this.car.x, this.playerW, opponent.car.x, carW, 1)) {
-                            var tmp = this.car.speed;
+                            var vi = this.car.speed;
                             this.car.speed     = opponent.car.speed/3;  // slow you relative to them
-                            opponent.car.speed += tmp * 1/5;            // give them some of your momentum
+                            opponent.car.speed += vi/5;                 // give them some of your momentum
                             this.car.z = this.car._z;
                             break;
                         }
