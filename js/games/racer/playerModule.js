@@ -135,6 +135,9 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                 this.car.x = Util.limit(this.car.x, -3, 3);                 // don't ever let it go too far out of bounds
                 this.car.speed = Util.limit(this.car.speed, 0, C.maxSpeed); // or exceed maxSpeed
             },
+            getFastestLap : function() {
+                return Math.max.apply(Math, this.lapTimes);
+            },
 
             accelerate : function(dt) {},
             steer : function(dt) {}

@@ -59,9 +59,6 @@ var Game = {
           gdt    = 0,
           curLap = 1;
 
-      //Dom.storage.fast_lap_time = Dom.storage.fast_lap_time || 180;
-      Dom.storage.fast_lap_time = 180;
-
       update(step);
 
       var humanPlayer = new humanModule();
@@ -78,8 +75,17 @@ var Game = {
           C.cars.push(ai);
         }
       });
+        var billboard = b('billboard').move([300,300])
+            .add(
+                b().path("M0 0 L503 0 L503 281 L0 281 L0 0 M0 0 Z").fill("rgba(70,40,0,1.0)")
+            )
+            .add(
+                b().path("M10 10 L490 10 L490 265 L10 265 L10 10 M10 10 Z").fill("rgba(255,255,255,1.0)")
+            );
+            //.add(clip)
 
       var scene = b('scene')
+          .add(billboard)
                     .modify(function(t) {
                       if(C.raceActive) {
                         dt = t - this._._appliedAt;
@@ -96,7 +102,6 @@ var Game = {
                       skyOffset  = Util.increase(skyOffset,  skySpeed  * C.playerSegment.curve * (player.car.z-player.car._z)/C.segmentLength, 1);
                       hillOffset = Util.increase(hillOffset, hillSpeed * C.playerSegment.curve * (player.car.z-player.car._z)/C.segmentLength, 1);
                       treeOffset = Util.increase(treeOffset, treeSpeed * C.playerSegment.curve * (player.car.z-player.car._z)/C.segmentLength, 1);
-
                       render(ctx);
                     });
 
@@ -209,8 +214,7 @@ var Game = {
             curLap = player.lap;
             var lastLapTime = player.lapTimes[player.lapTimes.length-1];
             changeText(lapCounter,[margin,0],player.lap + " / " + C.numLaps,false,0);
-            if(lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time) && lastLapTime > 0) {
-              Dom.storage.fast_lap_time = lastLapTime;
+            if(lastLapTime <= player.getFastestLap() && lastLapTime > 0) {
               changeText(fastLapTimeDisp,[margin,yOffset*2],"" + formatTime(lastLapTime),false);
             }
             changeText(lastLapTimeDisp,[margin,yOffset*3],"" + formatTime(lastLapTime),false);
@@ -226,6 +230,7 @@ var Game = {
       scene.add(hud);
 
       var light = makeStartingLight(scene);
+      update(step); // one last update to draw the new stuff
 
       var racer = createPlayer(canvas.id, {
         //"debug": true,
@@ -318,8 +323,8 @@ var Render = {
     ctx.fillStyle = color.grass;
     ctx.fillRect(0, y2, width, y1 - y2);
 
-    Render.polygon(ctx, x1-w1-r1, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2, y2, color.rumble);
-    Render.polygon(ctx, x1+w1+r1, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2, y2, color.rumble);
+    Render.polygon(ctx, x1-w1-r1, y1, x1-w1+1, y1, x2-w2+1, y2, x2-w2-r2, y2, color.rumble);  // The 1 pixel offset fixes a bug where a tiny strip of grass would show through
+    Render.polygon(ctx, x1+w1+r1, y1, x1+w1-1, y1, x2+w2-1, y2, x2+w2+r2, y2, color.rumble);
     Render.polygon(ctx, x1-w1,    y1, x1+w1, y1, x2+w2, y2, x2-w2,    y2, color.road);
 
     if (color.lane) {
@@ -378,6 +383,8 @@ var Render = {
   car: function(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY, offsetX, offsetY, clipY, updown, car,distance) {
     var bounce = ((2/distance) * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
     sprite = getCarSprite(car, updown);
+      // TODO: don't pass width, height, resolution, sprites
+    if(player.car.z > 5000) console.log(car.pNum,Math.round(destX), Math.round(destY + bounce), offsetX, offsetY,clipY);
     Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce, offsetX, offsetY,clipY);
   },
 

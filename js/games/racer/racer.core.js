@@ -65,7 +65,7 @@ function addSegment(curve, y) {
 }
 
 racer.addSprite = function(n, sprite, offset,collidable) {
-    collidable = collidable || true;
+    collidable = collidable && true;
     C.segments[n].sprites.push({ source: sprite, x: offset, collidable: collidable });
 };
 
@@ -167,7 +167,10 @@ function resetRoad() {
   //TODO: make a better finish line
   for(var n = 0 ; n < C.rumbleLength*3 ; n++) {
     var rumble = (C.segments.length-1+n)%C.segments.length;
-    C.segments[rumble].color = rumble%2 == 0 ? C.COLORS.FINISH : C.COLORS.START;
+    var grassColor = C.segments[rumble].color.grass;
+    var colors = jQuery.extend({},rumble%2 == 0 ? C.COLORS.FINISH : C.COLORS.START);
+    colors.grass = grassColor;
+    C.segments[rumble].color = colors;
   }
 
   C.trackLength = C.segments.length * C.segmentLength;
