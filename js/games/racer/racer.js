@@ -75,17 +75,8 @@ var Game = {
           C.cars.push(ai);
         }
       });
-      /*  var billboard = b('billboard').move([300,300])
-            .add(
-                b().path("M0 0 L503 0 L503 281 L0 281 L0 0 M0 0 Z").fill("rgba(70,40,0,1.0)")
-            )
-            .add(
-                b().path("M10 10 L490 10 L490 265 L10 265 L10 10 M10 10 Z").fill("rgba(255,255,255,1.0)")
-            );
-            //.add(clip)*/
 
       var scene = b('scene')
-         /* .add(billboard)*/
                     .modify(function(t) {
                       if(C.raceActive) {
                         dt = t - this._._appliedAt;
@@ -104,6 +95,27 @@ var Game = {
                       treeOffset = Util.increase(treeOffset, treeSpeed * C.playerSegment.curve * (player.car.z-player.car._z)/C.segmentLength, 1);
                       render(ctx);
                     });
+
+        for(var i=C.segments.length-1;i>=0;i--) {
+            var segment = C.segments[i];
+            for(var j=0;j<segment.sprites.length;j++) {
+                var sprite = segment.sprites[j];
+                if(sprite.source == C.SPRITES.BILLBOARD) {
+                    var billboard = b('billboard').reg([(sprite.x>0?-1:1)*250,140])
+                        .add(
+                            b().path("M0 0 L500 0 L500 280 L0 280 L0 0 M0 0 Z").fill("rgba(70,40,0,1.0)")
+                        )
+                        .add(
+                            b().path("M10 10 L490 10 L490 270 L10 270 L10 10 M10 10 Z").fill("rgba(255,255,255,1.0)")
+                        ).data({segIdx:segment.index,x:sprite.x,scale:1}).modify(function(t) { this.sx = this.sy = this.$.data().scale });
+                    //.add(clip)
+                    scene.add(billboard);
+                    segment.elements.push(billboard.v);
+                    // tell the sprite it's being replaced :/
+                    sprite.visible = false;
+                }
+            }
+        }
 
       scene.on(anm.C.X_KDOWN, function(evt) {
           switch(evt.key) {
@@ -364,7 +376,8 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  sprite: function(ctx, sprite, scale, destX, destY, offsetX, offsetY, clipY) {
+  sprite: function(ctx, sprite, scale, destX, destY, offsetX, offsetY, clipY, visible) {
+    if(!visible) return;
     var spriteScale = C.SPRITES.SCALE;
     var destW  = (sprite.w * scale * width/2) * (spriteScale * C.roadWidth);
     var destH  = (sprite.h * scale * width/2) * (spriteScale * C.roadWidth);
@@ -382,14 +395,14 @@ var Render = {
     var bounce = ((2/distance) * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
     sprite = getCarSprite(car, updown);
     //if(player.car.z > 5000) console.log("[CAR_RENDER] " + car.pNum,Math.round(destX), Math.round(destY + bounce), offsetX, offsetY,clipY);
-    Render.sprite(ctx, sprite, scale, destX, destY + bounce, offsetX, offsetY,clipY);
+    Render.sprite(ctx, sprite, scale, destX, destY + bounce, offsetX, offsetY,clipY, true);
   },
 
     player: function(ctx, scale, destX, destY, steer, updown, car) {
         setCamera(car.car);
         var bounce = (1.1 * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
         var sprite = getCarSprite(car, updown);
-    Render.sprite(ctx, sprite, scale, destX, destY + bounce, -0.5, -1,null);
+    Render.sprite(ctx, sprite, scale, destX, destY + bounce, -0.5, -1,null, true);
   },
 
   //---------------------------------------------------------------------------
@@ -593,10 +606,19 @@ function render(ctx) {
       spriteScale = segment.p1.screen.scale;
       spriteX     = segment.p1.screen.x + (spriteScale * sprite.x * C.roadWidth * width/2);
       spriteY     = segment.p1.screen.y + (sprite.source == C.SPRITES.COLUMN ? spriteScale*60000 : 0);
-      Render.sprite(ctx, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip);
+      Render.sprite(ctx, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip,sprite.visible);
     }
 
-    if (segment == playerSegment) {
+    for(i = 0 ; i < segment.elements.length ; i++) {
+      var element      = segment.elements[i];
+      var elementScale = segment.p1.screen.scale;
+      var elementX     = segment.p1.screen.x + (elementScale * element.data().x * C.roadWidth * width/2);
+      var elementY     = segment.p1.screen.y;
+
+      //Render.sprite(ctx, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip);
+      element.xdata.pos = [elementX, elementY];
+
+      element.data().scale = elementScale*3500; // approximation fun!
 
     }
   }

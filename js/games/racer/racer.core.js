@@ -59,14 +59,16 @@ function addSegment(curve, y) {
          p2: { world: { y: y,       z: (n+1)*C.segmentLength }, camera: {}, screen: {} },
       curve: curve,
     sprites: [],
+   elements: [],
        cars: [],
       color: Math.floor(n/C.rumbleLength)%2 ? C.COLORS.DARK : C.COLORS.LIGHT
   });
 }
 
+// The visible attributes is a temporary thing for if we are overwriting the canvas sprite with an animatron object.
 racer.addSprite = function(n, sprite, offset,collidable) {
     collidable = collidable && true;
-    C.segments[n].sprites.push({ source: sprite, x: offset, collidable: collidable });
+    C.segments[n].sprites.push({ source: sprite, x: offset, collidable: collidable, visible: true });
 };
 
 function addRoad(enter, hold, leave, curve, y) {
@@ -180,37 +182,37 @@ function resetSprites() {
   var n, i;
 
   for(n=20;n<=180;n+=40) {
-    racer.addSprite(n,  C.SPRITES.BILLBOARD, -1.4);
+    racer.addSprite(n,                      C.SPRITES.BILLBOARD, -1.4, true);
   }
 
-    racer.addSprite(240,                    C.SPRITES.BILLBOARD, -1.4);
-    racer.addSprite(240,                    C.SPRITES.BILLBOARD,  1.4);
-    racer.addSprite(C.segments.length - 25, C.SPRITES.BILLBOARD, -1.4);
-    racer.addSprite(C.segments.length - 25, C.SPRITES.BILLBOARD,  1.4);
+    racer.addSprite(240,                    C.SPRITES.BILLBOARD, -1.4, true);
+    racer.addSprite(240,                    C.SPRITES.BILLBOARD,  1.4, true);
+    racer.addSprite(C.segments.length - 25, C.SPRITES.BILLBOARD, -1.4, true);
+    racer.addSprite(C.segments.length - 25, C.SPRITES.BILLBOARD,  1.4, true);
 
   for(n = 10 ; n < 200 ; n += 4 + Math.floor(n/100)) {
-    racer.addSprite(n, C.SPRITES.PALM_TREE, .9 + Math.random()*0.5);
-    racer.addSprite(n, C.SPRITES.PALM_TREE,   1.1 + Math.random()*2);
+    racer.addSprite(n, C.SPRITES.PALM_TREE, .9 + Math.random()*0.5, true);
+    racer.addSprite(n, C.SPRITES.PALM_TREE,   1.1 + Math.random()*2, true);
   }
 
   for(n = 250 ; n < 1000 ; n += 5) {
-    racer.addSprite(n,     C.SPRITES.COLUMN, 1.2);
-    racer.addSprite(n + Util.randomInt(0,5), C.SPRITES.TREE1, -1.2 - (Math.random() * 2));
-    racer.addSprite(n + Util.randomInt(0,5), C.SPRITES.TREE2, -1.2 - (Math.random() * 2));
+    racer.addSprite(n,     C.SPRITES.COLUMN, 1.2, true);
+    racer.addSprite(n + Util.randomInt(0,5), C.SPRITES.TREE1, -1.2 - (Math.random() * 2), true);
+    racer.addSprite(n + Util.randomInt(0,5), C.SPRITES.TREE2, -1.2 - (Math.random() * 2), true);
   }
 
   for(n = 200 ; n < C.segments.length ; n += 3) {
-    racer.addSprite(n, Util.randomChoice(C.SPRITES.PLANTS), Util.randomChoice([1,-1]) * (2 + Math.random() * 5));
+    racer.addSprite(n, Util.randomChoice(C.SPRITES.PLANTS), Util.randomChoice([1,-1]) * (2 + Math.random() * 5), true);
   }
 
   var side, sprite, offset;
   for(n = 1000 ; n < (C.segments.length-50) ; n += 100) {
     side      = Util.randomChoice([1.4, -1.4]);
-    racer.addSprite(n + Util.randomInt(0, 50), Util.randomChoice(C.SPRITES.BILLBOARDS), -side);
+    racer.addSprite(n + Util.randomInt(0, 50), Util.randomChoice(C.SPRITES.BILLBOARDS), -side, true);
     for(i = 0 ; i < 20 ; i++) {
       sprite = Util.randomChoice(C.SPRITES.PLANTS);
       offset = side * (1.5 + Math.random());
-      racer.addSprite(n + Util.randomInt(0, 50), sprite, offset);
+      racer.addSprite(n + Util.randomInt(0, 50), sprite, offset, true);
     }
   }
 }
