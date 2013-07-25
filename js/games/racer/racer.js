@@ -75,17 +75,17 @@ var Game = {
           C.cars.push(ai);
         }
       });
-        var billboard = b('billboard').move([300,300])
+      /*  var billboard = b('billboard').move([300,300])
             .add(
                 b().path("M0 0 L503 0 L503 281 L0 281 L0 0 M0 0 Z").fill("rgba(70,40,0,1.0)")
             )
             .add(
                 b().path("M10 10 L490 10 L490 265 L10 265 L10 10 M10 10 Z").fill("rgba(255,255,255,1.0)")
             );
-            //.add(clip)
+            //.add(clip)*/
 
       var scene = b('scene')
-          .add(billboard)
+         /* .add(billboard)*/
                     .modify(function(t) {
                       if(C.raceActive) {
                         dt = t - this._._appliedAt;
@@ -162,7 +162,7 @@ var Game = {
                         .add(genElem(lapCounter      , [ margin, 0            ], "1 / " + C.numLaps   , "Lap"        , 0))
                         .add(genElem(curLapTimeDisp  , [ margin, yOffset      ], "00:00.00"           , "Current Lap"   ))
                         .add(genElem(fastLapTimeDisp , [ margin, yOffset*2    ], "- -:- -.- -"        , "Fastest Lap"   ))
-                        .add(genElem(lastLapTimeDisp , [ margin, yOffset*3    ], "00:00.00"           , "Last Lap"      ))
+                        .add(genElem(lastLapTimeDisp , [ margin, yOffset*3    ], "- -:- -.- -"        , "Last Lap"      ))
                         .add(speedometerFull);
 
       var resultWidth = canvas.width*.5, resultHeight = canvas.height*.5;
@@ -299,41 +299,40 @@ Game.initGame = function(mode,duration,aiName) {
 
 var Render = {
 
-  polygon: function(ctx, x1, y1, x2, y2, x3, y3, x4, y4, color) {
+  polygon: function(ctx, points, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.lineTo(x3, y3);
-    ctx.lineTo(x4, y4);
+    ctx.moveTo(points[0][0], points[0][1]);
+    for(var i=1;i<points.length;i++) {
+        ctx.lineTo(points[i][0],points[i][1]);
+    }
     ctx.closePath();
     ctx.fill();
   },
 
   //---------------------------------------------------------------------------
 
-  segment: function(ctx, width, lanes, x1, y1, w1, x2, y2, w2, fog, color) {
-
-    var r1 = Render.rumbleWidth(w1, lanes),
-        r2 = Render.rumbleWidth(w2, lanes),
-        l1 = Render.laneMarkerWidth(w1, lanes),
-        l2 = Render.laneMarkerWidth(w2, lanes),
+  segment: function(ctx, x1, y1, w1, x2, y2, w2, fog, color) {
+    var r1 = Render.rumbleWidth(w1, C.lanes),
+        r2 = Render.rumbleWidth(w2, C.lanes),
+        l1 = Render.laneMarkerWidth(w1, C.lanes),
+        l2 = Render.laneMarkerWidth(w2, C.lanes),
         lanew1, lanew2, lanex1, lanex2, lane;
 
     ctx.fillStyle = color.grass;
     ctx.fillRect(0, y2, width, y1 - y2);
 
-    Render.polygon(ctx, x1-w1-r1, y1, x1-w1+1, y1, x2-w2+1, y2, x2-w2-r2, y2, color.rumble);  // The 1 pixel offset fixes a bug where a tiny strip of grass would show through
-    Render.polygon(ctx, x1+w1+r1, y1, x1+w1-1, y1, x2+w2-1, y2, x2+w2+r2, y2, color.rumble);
-    Render.polygon(ctx, x1-w1,    y1, x1+w1, y1, x2+w2, y2, x2-w2,    y2, color.road);
+    Render.polygon(ctx, [[x1-w1-r1, y1], [x1-w1+1, y1], [x2-w2+1, y2], [x2-w2-r2, y2]], color.rumble);  // The 1 pixel offset fixes a bug where a tiny strip of grass would show through
+    Render.polygon(ctx, [[x1+w1+r1, y1], [x1+w1-1, y1], [x2+w2-1, y2], [x2+w2+r2, y2]], color.rumble);
+    Render.polygon(ctx, [[x1-w1,    y1], [x1+w1, y1],   [x2+w2, y2],   [x2-w2,    y2]], color.road);
 
     if (color.lane) {
-      lanew1 = w1*2/lanes;
-      lanew2 = w2*2/lanes;
+      lanew1 = w1*2/C.lanes;
+      lanew2 = w2*2/C.lanes;
       lanex1 = x1 - w1 + lanew1;
       lanex2 = x2 - w2 + lanew2;
-      for(lane = 1 ; lane < lanes ; lanex1 += lanew1, lanex2 += lanew2, lane++)
-        Render.polygon(ctx, lanex1 - l1/2, y1, lanex1 + l1/2, y1, lanex2 + l2/2, y2, lanex2 - l2/2, y2, color.lane);
+      for(lane = 1 ; lane < C.lanes ; lanex1 += lanew1, lanex2 += lanew2, lane++)
+        Render.polygon(ctx, [[lanex1 - l1/2, y1], [lanex1 + l1/2, y1], [lanex2 + l2/2, y2],[lanex2 - l2/2, y2]], color.lane);
     }
 
     Render.fog(ctx, 0, y1, width, y2-y1, fog);
@@ -341,8 +340,7 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  background: function(ctx, background, width, height, layer, rotation, offset) {
-
+  background: function(ctx, layer, rotation, offset) {
     rotation = rotation || 0;
     offset   = offset   || 0;
 
@@ -366,10 +364,10 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  sprite: function(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY, offsetX, offsetY, clipY) {
+  sprite: function(ctx, sprite, scale, destX, destY, offsetX, offsetY, clipY) {
     var spriteScale = C.SPRITES.SCALE;
-    var destW  = (sprite.w * scale * width/2) * (spriteScale * roadWidth);
-    var destH  = (sprite.h * scale * width/2) * (spriteScale * roadWidth);
+    var destW  = (sprite.w * scale * width/2) * (spriteScale * C.roadWidth);
+    var destH  = (sprite.h * scale * width/2) * (spriteScale * C.roadWidth);
 
     destX = destX + (destW * (offsetX || 0));
     destY = destY + (destH * (offsetY || 0));
@@ -380,19 +378,18 @@ var Render = {
 
   },
 
-  car: function(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY, offsetX, offsetY, clipY, updown, car,distance) {
+  car: function(ctx, sprite, scale, destX, destY, offsetX, offsetY, clipY, updown, car,distance) {
     var bounce = ((2/distance) * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
     sprite = getCarSprite(car, updown);
-      // TODO: don't pass width, height, resolution, sprites
-    if(player.car.z > 5000) console.log(car.pNum,Math.round(destX), Math.round(destY + bounce), offsetX, offsetY,clipY);
-    Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce, offsetX, offsetY,clipY);
+    //if(player.car.z > 5000) console.log("[CAR_RENDER] " + car.pNum,Math.round(destX), Math.round(destY + bounce), offsetX, offsetY,clipY);
+    Render.sprite(ctx, sprite, scale, destX, destY + bounce, offsetX, offsetY,clipY);
   },
 
-    player: function(ctx, width, height, resolution, roadWidth, sprites, scale, destX, destY, steer, updown, car) {
+    player: function(ctx, scale, destX, destY, steer, updown, car) {
         setCamera(car.car);
         var bounce = (1.1 * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
         var sprite = getCarSprite(car, updown);
-    Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce, -0.5, -1,null);
+    Render.sprite(ctx, sprite, scale, destX, destY + bounce, -0.5, -1,null);
   },
 
   //---------------------------------------------------------------------------
@@ -436,7 +433,7 @@ function getCarSprite (car, updown) {
 
             if(C.input.keyDrift) {
                 lrOrient = (C.input.keyLeft ? -1 : C.input.keyRight ? 1 : 0) * 3;
-                console.log(C.input,lrOrient);
+                console.log("[DRIFT] " + C.input,lrOrient);
             } else {
                 lrOrient = Math.abs(dx-0);
                 if (lrOrient < .1) lrOrient = 0;
@@ -533,9 +530,9 @@ function render(ctx) {
 
   ctx.clearRect(0, 0, width, height);
 
-  Render.background(ctx, background, width, height, C.BACKGROUND.SKY,   skyOffset,  resolution * skySpeed  * playerY);
-  Render.background(ctx, background, width, height, C.BACKGROUND.HILLS, hillOffset, resolution * hillSpeed * playerY);
-  Render.background(ctx, background, width, height, C.BACKGROUND.TREES, treeOffset, resolution * treeSpeed * playerY);
+  Render.background(ctx, C.BACKGROUND.SKY,   skyOffset,  resolution * skySpeed  * playerY);
+  Render.background(ctx, C.BACKGROUND.HILLS, hillOffset, resolution * hillSpeed * playerY);
+  Render.background(ctx, C.BACKGROUND.TREES, treeOffset, resolution * treeSpeed * playerY);
 
   var n, i, segment, sprite, spriteScale, spriteX, spriteY;
 
@@ -557,7 +554,7 @@ function render(ctx) {
       continue;
     }
 
-    Render.segment(ctx, width, C.lanes,
+    Render.segment(ctx,
                    segment.p1.screen.x,
                    segment.p1.screen.y,
                    segment.p1.screen.w,
@@ -576,7 +573,7 @@ function render(ctx) {
     for(i = 0 ; i < segment.cars.length ; i++) {
       opponent    = segment.cars[i];
       if(opponent.isYou) {
-          Render.player( ctx, width, height, resolution, C.roadWidth, sprites,
+          Render.player( ctx,
                       camera.depth/camera.playerZ,
                       width/2,
                       (height/2) - (camera.depth/camera.playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
@@ -587,7 +584,7 @@ function render(ctx) {
           spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, opponent.car.percent);
           spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     opponent.car.percent) + (spriteScale * opponent.car.x * C.roadWidth * width/2);
           spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     opponent.car.percent);
-          Render.car(ctx, width, height, resolution, C.roadWidth, sprites, opponent.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip, segment.p2.world.y - segment.p1.world.y,opponent,n);
+          Render.car(ctx, opponent.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip, segment.p2.world.y - segment.p1.world.y,opponent,n);
       }
     }
 
@@ -596,7 +593,7 @@ function render(ctx) {
       spriteScale = segment.p1.screen.scale;
       spriteX     = segment.p1.screen.x + (spriteScale * sprite.x * C.roadWidth * width/2);
       spriteY     = segment.p1.screen.y + (sprite.source == C.SPRITES.COLUMN ? spriteScale*60000 : 0);
-      Render.sprite(ctx, width, height, resolution, C.roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip);
+      Render.sprite(ctx, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip);
     }
 
     if (segment == playerSegment) {

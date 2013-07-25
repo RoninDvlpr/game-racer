@@ -25,7 +25,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core','games/
         };
         player.prototype.accelerate = function(dt) {
             this.car._z = this.car.z;
-            this.car.z  = Util.increase(this.car.z, dt * this.car.speed, C.trackLength);
+            this.car.z  = Util.increase(this.car.z, dt * this.car.maxSpeed, C.trackLength); //TODO: switch maxSpeed back to speed
 
             if (C.input.keyFaster && !C.input.keyDrift)
                 this.car.speed = Util.accelerate(this.car.speed, this.car.accel, dt);

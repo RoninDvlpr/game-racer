@@ -36,6 +36,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                 segment.cars.push(this);
             },
             move: function(dt) {
+                var tamp = this.car.z;
                 if(this.car.freezeTime < 0) {
                     this.regulate();
                     var oldSegment = Core.findSegment(this.car.z);
@@ -84,6 +85,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                         this.currentLapTime += dt;
                     }
                 }
+                // if(this.pNum == 0) console.log("[Z] " + tamp, this.car.z);
             },
             adjustCentrifugal : function(dt) {
                 var speedPercent  = this.car.speed/C.maxSpeed;
