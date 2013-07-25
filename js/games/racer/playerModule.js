@@ -40,6 +40,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                     this.regulate();
                     var oldSegment = Core.findSegment(this.car.z);
                     this.accelerate(dt);
+                    this.regulate();
                     this.steer(dt);
                     this.regulate();
                     this.adjustCentrifugal(dt);
