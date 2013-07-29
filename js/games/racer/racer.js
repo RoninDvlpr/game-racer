@@ -107,7 +107,21 @@ var Game = {
                         )
                         .add(
                             b().path("M10 10 L490 10 L490 270 L10 270 L10 10 M10 10 Z").fill("rgba(255,255,255,1.0)")
-                        ).data({segIdx:segment.index,x:sprite.x,scale:1}).modify(function(t) { this.sx = this.sy = this.$.data().scale });
+                        )
+                        .add(
+                            b().circle([0,0],15).fill('black').modify(function(t) {
+                                this.x = Math.cos(t*4)*100;
+                                this.y = Math.sin(t*4)*100;
+                            })
+                        ) // A silly little test animation
+                        .data({
+                            segIdx: segment.index,
+                            x     : sprite.x,
+                            scale : 1
+                        })
+                        .modify(function(t) {
+                            this.sx = this.sy = this.$.data().scale
+                        });
                     //.add(clip)
                     scene.add(billboard);
                     segment.elements.push(billboard.v);
