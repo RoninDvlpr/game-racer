@@ -35,8 +35,10 @@ var treeOffset     = 0;                       // current tree scroll offset
 var resolution     = height/480;
 var fogDensity     = 1;                       // exponential fog density
 var player         = null;                    // you! (The local racer being controlled)
+var layers         = null;                    // layers to paint on. Needed for propering z-indexing of game assets
 var background, sprites;
 var b              = Builder._$;
+
 
 //=========================================================================
 // GAME LOOP helpers
@@ -44,6 +46,7 @@ var b              = Builder._$;
 
 var Game = {
   run: function() {
+    var i, j; //iter vars
     canvas.width  = width;
     canvas.height = height;
 
@@ -96,12 +99,17 @@ var Game = {
                       render(ctx);
                     });
 
-        for(var i=C.segments.length-1;i>=0;i--) {
+        layers = b('layer-root');
+        for(i=0;i< C.drawDistance+1;i++) {
+            layers.add(b('layer' + i).data({ isLayer : true }));
+        }
+
+        for(i=C.segments.length-1;i>=0;i--) {
             var segment = C.segments[i];
             for(var j=0;j<segment.sprites.length;j++) {
                 var sprite = segment.sprites[j];
                 if(sprite.source == C.SPRITES.BILLBOARD) {
-                    var billboard = b('billboard').reg([(sprite.x>0?-1:1)*250,140])
+                    var billboard = b().reg([(sprite.x>0?-1:1)*250,140])
                         .add(
                             b().path("M0 0 L500 0 L500 280 L0 280 L0 0 M0 0 Z").fill("rgba(70,40,0,1.0)")
                         )
@@ -115,21 +123,23 @@ var Game = {
                             })
                         ) // A silly little test animation
                         .data({
-                            segIdx: segment.index,
-                            x     : sprite.x,
-                            scale : 1
+                            segIdx : segment.index,
+                            x      : sprite.x,
+                            scale  : 1,
+                            isLayer: false
                         })
                         .modify(function(t) {
                             this.sx = this.sy = this.$.data().scale
                         });
                     //.add(clip)
-                    scene.add(billboard);
+                    layers.add(billboard);
                     segment.elements.push(billboard.v);
                     // tell the sprite it's being replaced :/
                     sprite.visible = false;
                 }
             }
         }
+        scene.add(layers);
 
       scene.on(anm.C.X_KDOWN, function(evt) {
           switch(evt.key) {
@@ -154,7 +164,7 @@ var Game = {
       var valueHeight = 30;
       var margin = 4;
       var yOffset = valueHeight+labelHeight+ margin;
-      var font = "Century Gothic";
+      var font = "Arial";  //Century Gothic
 
       var positionDisp    = b('position');
       var lapCounter      = b('lapCounter');
@@ -198,13 +208,13 @@ var Game = {
                                 .move([resultWidth/2,resultHeight/2])
                                 .reg([-resultWidth/2,-resultHeight/2]);
       results.add(makeResult(b('results-header'), 0, "NAME", "TIME",resultTextHeight));
-      for(var i=0;i<C.numRacers;i++) {
+      for(i=0;i<C.numRacers;i++) {
           results.add(makeResult(b(), i+1, "", "",resultTextHeight));
       }
       results.disable();
       results.modify(function() {
           var positions = updateResults();
-          for(var i=0;i<positions.length;i++) {
+          for(i=0;i<positions.length;i++) {
               var p = positions[i];
               makeResult(b(results.v.children[i+1]), i+1, p.name, round(p.time),resultTextHeight,p.pNum == 0);
           }
@@ -563,6 +573,7 @@ function render(ctx) {
 
   var n, i, segment, sprite, spriteScale, spriteX, spriteY;
 
+  // set segment data
   for(n = 0 ; n < C.drawDistance ; n++) {
     segment        = C.segments[(baseSegment.index + n) % C.segments.length];
     segment.looped = segment.index < baseSegment.index;
@@ -594,37 +605,52 @@ function render(ctx) {
     maxy = segment.p1.screen.y;
   }
 
+  var layerIdx = 0;      // The index of the current layer
+  var layer    = null;   // The current layer
+  //var context  = null;   // The context to draw the sprite in (which layer)
+
+    // remove billboards (we'll add them back in)
+  var tmp_layers = [];
+  for(i=0;i<layers.v.children.length;i++) {
+      if(layers.v.children[i].name.indexOf("layer") !== -1) tmp_layers.push(layers.v.children[i]);
+  }
+
   for(n = (C.drawDistance-1) ; n > 0 ; n--) {
     segment = C.segments[(baseSegment.index + n) % C.segments.length];
-    var opponent;
-    for(i = 0 ; i < segment.cars.length ; i++) {
-      opponent    = segment.cars[i];
-      if(opponent.isYou) {
-          Render.player( ctx,
-                      camera.depth/camera.playerZ,
-                      width/2,
-                      (height/2) - (camera.depth/camera.playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
-                      player.car.speed * (C.input.keyLeft ? -1 : C.input.keyRight ? 1 : 0),
-                      playerSegment.p2.world.y - playerSegment.p1.world.y,player);
-      } else {
-          sprite      = opponent.sprite;
-          spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, opponent.car.percent);
-          spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     opponent.car.percent) + (spriteScale * opponent.car.x * C.roadWidth * width/2);
-          spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     opponent.car.percent);
-          Render.car(ctx, opponent.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip, segment.p2.world.y - segment.p1.world.y,opponent,n);
-      }
-    }
+    layer = tmp_layers[layerIdx];
+    if (layer._painters.length > 1) layer._painters.splice(1,1); // remove any old painters
+    b(layer).paint(function(context) {
+        for(i = 0 ; i < segment.cars.length ; i++) {
+          var opponent = segment.cars[i];
+          if(opponent.isYou) {
+              Render.player( context,
+                          camera.depth/camera.playerZ,
+                          width/2,
+                          (height/2) - (camera.depth/camera.playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
+                          player.car.speed * (C.input.keyLeft ? -1 : C.input.keyRight ? 1 : 0),
+                          playerSegment.p2.world.y - playerSegment.p1.world.y,player);
+          } else {
+              sprite      = opponent.sprite;
+              spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, opponent.car.percent);
+              spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     opponent.car.percent) + (spriteScale * opponent.car.x * C.roadWidth * width/2);
+              spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     opponent.car.percent);
+              Render.car(context, opponent.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip, segment.p2.world.y - segment.p1.world.y,opponent,n);
+          }
+        }
 
-    for(i = 0 ; i < segment.sprites.length ; i++) {
-      sprite      = segment.sprites[i];
-      spriteScale = segment.p1.screen.scale;
-      spriteX     = segment.p1.screen.x + (spriteScale * sprite.x * C.roadWidth * width/2);
-      spriteY     = segment.p1.screen.y + (sprite.source == C.SPRITES.COLUMN ? spriteScale*60000 : 0);
-      Render.sprite(ctx, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip,sprite.visible);
-    }
+        for(i = 0 ; i < segment.sprites.length ; i++) {
+          sprite      = segment.sprites[i];
+          spriteScale = segment.p1.screen.scale;
+          spriteX     = segment.p1.screen.x + (spriteScale * sprite.x * C.roadWidth * width/2);
+          spriteY     = segment.p1.screen.y + (sprite.source == C.SPRITES.COLUMN ? spriteScale*60000 : 0);
+          Render.sprite(context, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip,sprite.visible);
+        }
+    });
 
     for(i = 0 ; i < segment.elements.length ; i++) {
       var element      = segment.elements[i];
+      tmp_layers.splice(++layerIdx,0,element); // insert the element
+
       var elementScale = segment.p1.screen.scale;
       var elementX     = segment.p1.screen.x + (elementScale * element.data().x * C.roadWidth * width/2);
       var elementY     = segment.p1.screen.y;
@@ -633,9 +659,10 @@ function render(ctx) {
       element.xdata.pos = [elementX, elementY];
 
       element.data().scale = elementScale*3500; // approximation fun!
-
     }
+    layerIdx++; // once all billboards are added, move to a fresh layer
   }
+  layers.v.children = tmp_layers;
 }
 return Game;
 
