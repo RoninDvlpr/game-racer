@@ -24,7 +24,7 @@ define(['backbone', 'handlebars'], function (Backbone, Handlebars) {
             // Add the game to the canvas
             var gameName = gameInfo.filename;
             require(['games/'+gameName+'/'+gameName], function(game) {
-                game.initGame(gameMode,gameInfo.duration,"perfectAI.js");
+                game.initGame(gameMode,gameInfo.duration,{name: 'basic_ai'});
             });
 
             $('#session-page').css({'left':0});
