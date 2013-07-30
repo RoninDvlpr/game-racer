@@ -35,6 +35,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                 this.car.z = (Common.trackLength - 1 - Math.floor(playerNum/Common.lanes)*Common.segmentLength*5)%Common.trackLength;  //The -1 is to make sure nobody ends up at z=0
                 var segment = Core.findSegment(this.car.z);
                 segment.cars.push(this);
+                this.car.percent = Util.percentRemaining(this.car.z, Common.segmentLength);
             },
             move: function(dt,input) {
                 if(this.isYou) this.setInput(input);
@@ -46,7 +47,6 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                     this.steer(dt);
                     this.regulate();
                     this.adjustCentrifugal(dt);
-                    this.car.percent = Util.percentRemaining(this.car.z, Common.segmentLength);
                     var newSegment = Core.findSegment(this.car.z);
 
                     if ((this.car.x < -1) || (this.car.x > 1)) {
@@ -57,6 +57,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                     this.regulate();
 
                     newSegment  = Core.findSegment(this.car.z);  //reassess after checking for collisions
+                    this.car.percent = Util.percentRemaining(this.car.z, Common.segmentLength);
                     if (oldSegment != newSegment) {
                         var index = oldSegment.cars.indexOf(this);
                         oldSegment.cars.splice(index, 1);
@@ -92,6 +93,7 @@ define(['games/racer/util','games/racer/common','games/racer/racer.core'], funct
                 var speedPercent  = this.car.speed/Common.maxSpeed;
                 var dx            = 2*speedPercent*dt;
                 var dz            = this.car.z - this.car._z;
+                if(dz < 0)    dz += Common.trackLength; // woops
                 var sign          = Common.playerSegment.curve < 0 ? -1 : 1;
 
                 var outwardForce = dx * Common.playerSegment.curve / Common.centrifugal;

@@ -474,7 +474,8 @@ var Render = {
     car: function(ctx, sprite, scale, destX, destY, offsetX, offsetY, clipY, updown, car,distance) {
         var bounce = ((2/distance) * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
         sprite = getCarSprite(car, updown);
-        //if(player.car.z > 5000) console.log("[CAR_RENDER] " + car.pNum,Math.round(destX), Math.round(destY + bounce), offsetX, offsetY,clipY);
+        if((player.car.z > 5000 || player.car.z < 1000) && car.pNum == 1) console.log("[CAR_RENDER] " + car.pNum,destX, destY);
+        //else console.log(player.car.z)
         Render.sprite(ctx, sprite, scale, destX, destY + bounce, offsetX, offsetY,clipY);
     },
 
@@ -580,6 +581,7 @@ function render(ctx) {
       } else {
           sprite      = opponent.sprite;
           spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, opponent.car.percent);
+          if(opponent.pNum == 1 && (player.car.z < 1000 || player.car.z > 10000)) console.log('destXY',opponent.car.percent)
           spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     opponent.car.percent) + (spriteScale * opponent.car.x * Common.roadWidth * width/2);
           spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     opponent.car.percent);
           Render.car(ctx, opponent.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip, segment.p2.world.y - segment.p1.world.y,opponent,n);
@@ -592,10 +594,6 @@ function render(ctx) {
       spriteX     = segment.p1.screen.x + (spriteScale * sprite.x * Common.roadWidth * width/2);
       spriteY     = segment.p1.screen.y + (sprite.source == Common.SPRITES.COLUMN ? spriteScale*60000 : 0);
       Render.sprite(ctx, sprite.source, spriteScale, spriteX, spriteY, (sprite.x < 0 ? -1 : 0), -1, segment.clip);
-    }
-
-    if (segment == playerSegment) {
-
     }
   }
 }
