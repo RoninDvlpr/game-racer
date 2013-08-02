@@ -69,7 +69,7 @@ var Game = {
             Common.cars.push(humanPlayer);
             player = Common.cars[0];
 
-            require(["games/racer/ai/" + ai.name], function (aiModule) {
+            require(["js/games/racer/ai/" + ai.name], function (aiModule) {
                 //gameMode = GAME_MODE.versusAI
                 for (var i = 1; i < Common.numRacers; i++) {
                     var ai = new aiModule();
@@ -79,6 +79,7 @@ var Game = {
             });
 
             var scene = buildScene();
+            console.log(scene)
 
             var racer = createPlayer(canvas.id, {
                 //"debug": true,
@@ -372,11 +373,11 @@ function makeStartingLight(scene) {
         .stroke('black',2)
         .band([0,4]);
     for(var i=0;i<colors.length;i++) {
-        var inactive = b().circle([0,(diameter+padding/2)*(i-1)],diameter/2)  // Todo: switch 1 to be changable
+        var inactive = b().circle([0,(diameter+padding/2)*(i-1)],diameter/2)  // Todo: switch 1 to be changeable
             .fill(colors[i][1])
             .stroke('black',1);
 
-        var active   = b().circle([0,(diameter+padding/2)*(i-1)],diameter/2)  // Todo: switch 1 to be changable
+        var active   = b().circle([0,(diameter+padding/2)*(i-1)],diameter/2)  // Todo: switch 1 to be changeable
             .fill(colors[i][0])
             .stroke('black',1)
             .band([i+1,i+2]);
@@ -474,7 +475,7 @@ var Render = {
     car: function(ctx, sprite, scale, destX, destY, offsetX, offsetY, clipY, updown, car,distance) {
         var bounce = ((2/distance) * Math.random() * (car.car.speed/car.car.maxSpeed) * resolution) * Util.randomChoice([-1,1]);
         sprite = getCarSprite(car, updown);
-        if((player.car.z > 5000 || player.car.z < 1000) && car.pNum == 1) console.log("[CAR_RENDER] " + car.pNum,destX, destY);
+        //if((player.car.z > 5000 || player.car.z < 1000) && car.pNum == 1) console.log("[CAR_RENDER] " + car.pNum,destX, destY);
         //else console.log(player.car.z)
         Render.sprite(ctx, sprite, scale, destX, destY + bounce, offsetX, offsetY,clipY);
     },
@@ -581,7 +582,7 @@ function render(ctx) {
       } else {
           sprite      = opponent.sprite;
           spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, opponent.car.percent);
-          if(opponent.pNum == 1 && (player.car.z < 1000 || player.car.z > 10000)) console.log('destXY',opponent.car.percent)
+          //if(opponent.pNum == 1 && (player.car.z < 1000 || player.car.z > 10000)) console.log('destXY',opponent.car.percent)
           spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     opponent.car.percent) + (spriteScale * opponent.car.x * Common.roadWidth * width/2);
           spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     opponent.car.percent);
           Render.car(ctx, opponent.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip, segment.p2.world.y - segment.p1.world.y,opponent,n);
